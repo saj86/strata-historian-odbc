@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "notebooks"))
-from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, event_checksum, raw_matches_timestamp, run_window, validate_window_params  # noqa: E402
+from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, event_checksum, merge_points, raw_matches_timestamp, run_window, validate_window_params  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 NOTEBOOKS = os.path.join(ROOT, "fabric", "notebooks")
@@ -239,6 +239,35 @@ class WindowParameters(unittest.TestCase):
     def test_notebook_copy_matches_the_model(self):
         self.assertEqual(function_source(os.path.join(NOTEBOOKS, "curation_model.py"), "validate_window_params"),
                          function_source(os.path.join(NOTEBOOKS, "validate_window.py"), "validate_window_params"))
+
+
+class Points(unittest.TestCase):
+    A = {"PointId": "P1", "TagName": "OLD.NAME"}
+    B = {"PointId": "P2", "TagName": "OTHER"}
+
+    def test_rename_keeps_identity(self):
+        before = merge_points({}, [self.A, self.B], True, "r1")
+        after = merge_points(before, [{"PointId": "P1", "TagName": "NEW.NAME"}, self.B], True, "r2")
+        self.assertEqual(len(after), 2)
+        self.assertEqual(after["P1"]["TagName"], "NEW.NAME")
+
+    def test_missing_point_goes_inactive_and_stays(self):
+        before = merge_points({}, [self.A, self.B], True, "r1")
+        after = merge_points(before, [self.A], True, "r2")
+        self.assertFalse(after["P2"]["IsActive"])
+        self.assertTrue(after["P1"]["IsActive"])
+        self.assertTrue(before["P2"]["IsActive"])
+
+    def test_point_returning_goes_active_again(self):
+        gone = merge_points(merge_points({}, [self.A, self.B], True, "r1"), [self.A], True, "r2")
+        self.assertTrue(merge_points(gone, [self.A, self.B], True, "r3")["P2"]["IsActive"])
+
+    def test_incomplete_or_empty_read_is_rejected(self):
+        before = merge_points({}, [self.A], True, "r1")
+        with self.assertRaises(ValidationError):
+            merge_points(before, [], False, "r2")
+        with self.assertRaises(ValidationError):
+            merge_points(before, [], True, "r2")
 
 
 if __name__ == "__main__":

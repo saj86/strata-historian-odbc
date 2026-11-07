@@ -148,3 +148,18 @@ def run_window(store: Store, x: Extract, schedule: List[Window], crash_before_ch
     if crash_before_checkpoint:
         raise RuntimeError("simulated crash after Delta commit, before checkpoint")
     advance_watermark(store, x.point_id, schedule)
+
+
+def merge_points(existing, incoming, complete, run_id):
+    """existing: {PointId: dict} for one source. Returns the new state; existing is left untouched.
+
+    A point missing from a complete read is marked inactive and never deleted, because history still refers to it.
+    """
+    if not complete:
+        raise ValidationError("incomplete read: nothing may be inferred from it")
+    if not incoming:
+        raise ValidationError("a complete read returned no points; this looks like a permissions change, not an empty server")
+    merged = {pid: dict(p, IsActive=False) for pid, p in existing.items()}
+    for p in incoming:
+        merged[p["PointId"]] = dict(p, IsActive=True, last_seen_run_id=run_id)
+    return merged
