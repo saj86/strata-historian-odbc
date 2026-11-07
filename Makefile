@@ -76,6 +76,8 @@ package-windows: $(VENV)/.done
 	cp docs/powerbi-acceptance.md dist/$(PKG)/docs/
 	cp powerquery/examples.pq dist/$(PKG)/powerquery/
 	cp packaging/README-TEST.txt dist/$(PKG)/README-TEST.txt
+	mkdir -p dist/$(PKG)/samples
+	rsync -a --exclude bin --exclude obj samples/ dist/$(PKG)/samples/
 	cd dist/$(PKG) && shasum -a 256 bin/* > SHA256SUMS.txt
 	cd dist && rm -f $(PKG).zip && zip -qr $(PKG).zip $(PKG)
 	@ls -l dist/$(PKG).zip

@@ -13,7 +13,11 @@ Needs: 64-bit Windows 10 or 11. Python and Visual Studio are not required.
    It unblocks the files, installs the driver, creates fixture DSNs and runs both test programs.
    Expected last lines: "core_tests: ... 0 failures", "odbc_smoke: ... 0 failures", "ALL PASSED".
 3. Power BI Desktop: follow docs\powerbi-acceptance.md (Gate A), from "Procedure".
-4. Remove everything:
+4. Optional examples, once step 2 has passed:
+     .\samples\powershell\Example.ps1
+     cd samples\csharp\StrataSample; dotnet run     (needs the .NET 10 SDK)
+   Power BI queries and measures are in samples\powerbi.
+5. Remove everything:
      powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninstall
 
 The driver is installed in "C:\Program Files\Strata Historian ODBC". The DSNs are StrataFixture and
