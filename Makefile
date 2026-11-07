@@ -6,6 +6,7 @@
 #   make package-windows   build the unsigned Windows test zip (needs no Windows machine)
 #   make package   build one complete zip: binaries, documents, examples and source
 #   make check-pbip   check the Power BI project without Power BI Desktop
+#   make setup     build the Windows setup program (strata-historian-odbc-setup-<version>.exe)
 # This is not the Windows release path: use scripts/Build-And-Test.ps1 on Windows for the MSI.
 
 VERSION   := $(shell awk '/STRATA_VERSION_MAJOR/{a=$$3} /STRATA_VERSION_MINOR/{b=$$3} /STRATA_VERSION_PATCH/{c=$$3} END{print a"."b"."c}' src/odbc/version.h)
@@ -26,7 +27,7 @@ PKG       := strata-odbc-$(VERSION)-win-x64-UNSIGNED-TEST
 FULL      := strata-odbc-$(VERSION)-complete-UNSIGNED
 export PATH := $(VENV)/bin:$(ODBC)/bin:$(PATH)
 
-.PHONY: all tools build test install uninstall query package-windows package check-pbip clean
+.PHONY: all tools build test install uninstall query package-windows package check-pbip setup clean
 all: build
 
 $(VENV)/.done:
@@ -99,6 +100,10 @@ package: package-windows
 	mkdir -p dist; (cd "$$stage" && zip -qr -FS "$(ROOT)/dist/$(FULL).zip" "$(FULL)"); \
 	(cd dist && shasum -a 256 "$(FULL).zip" > "$(FULL).zip.sha256")
 	@ls -l dist/$(FULL).zip
+
+# The Windows setup program (a wizard, like an installer), built here with the .NET SDK. See scripts/build-setup.sh.
+setup: $(VENV)/.done
+	ZIGCXX="$(VENV)/bin/python -m ziglang c++" DOTNET=$(HOME)/.dotnet/dotnet scripts/build-setup.sh
 
 # Checks the Power BI project without Power BI Desktop: consistency, Microsoft's JSON schemas, Microsoft's TMDL
 # parser, and the project's own SQL through the installed driver. Needs .NET and network access.

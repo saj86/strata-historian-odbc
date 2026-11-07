@@ -1,0 +1,11 @@
+Strata Historian ODBC Driver
+
+This driver reads PI data through PI Web API. It is read-only: it never writes to PI.
+
+Not an AVEVA product. PI, PI System and PI Web API are trademarks of AVEVA. This driver is independent and is not supported by AVEVA.
+
+Licensing of PI access is your responsibility. AVEVA's terms may require a PI System Access (PSA) licence for a non-AVEVA program that reads PI data. Confirm this with whoever manages your AVEVA agreement before using the driver on production data. See docs\team-rollout.md.
+
+Test builds. Builds that are not signed by your organization are for testing only, not for gateways or production hosts.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM THE USE OF THE SOFTWARE.

@@ -14,3 +14,5 @@ dist/
 samples/csharp/**/bin/
 samples/csharp/**/obj/
 .DS_Store
+setup/**/bin/
+setup/**/obj/
