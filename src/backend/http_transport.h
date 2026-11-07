@@ -38,6 +38,8 @@ void validateBaseUrl(const std::string& url);
 
 #ifdef _WIN32
 std::unique_ptr<HttpTransport> makeWinHttpTransport(const TransportConfig& cfg);
+#else
+std::unique_ptr<HttpTransport> makeLoopbackTransport();  // test builds only: http://127.0.0.1
 #endif
 
 }  // namespace strata

@@ -52,7 +52,7 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 - OIDC authentication is not implemented.
 - `PointId IN (...)` reads points one at a time.
 - `ORDER BY` other than natural order buffers rows in memory, up to `MaxRows`.
-- More events at one timestamp than `PageSize` raises an error. Raise `PageSize`.
+- If `PageSize` or more events share one timestamp, the read raises an error. Raise `PageSize`.
 - `ConfigDSNW` has no dialog, by design. Use the provisioning script.
 - Pipeline correlation with driver traces is by point, window and time, not a shared ID.
 - `curated_af_attributes` and `curated_event_frames` are table definitions only, because no backend can fill them yet.

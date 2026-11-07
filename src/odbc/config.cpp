@@ -123,7 +123,16 @@ std::unique_ptr<Backend> makeBackend(const Config& c) {
         pc.trace = Trace(c.traceFile);
         return makePiWebApiBackend(std::move(pc), makeWinHttpTransport(tc));
 #else
-        throw Error("08001", "unsupported-backend: the PI Web API transport is implemented with WinHTTP and exists only in the Windows build.");
+        if (toUpper(c.baseUrl).rfind("HTTP://127.0.0.1:", 0) != 0)
+            throw Error("08001", "unsupported-backend: the PI Web API transport is implemented with WinHTTP and exists only in the Windows build. Non-Windows builds reach a loopback mock only.");
+        PiWebApiConfig pc;
+        pc.baseUrl = c.baseUrl;
+        pc.dataServer = c.dataServer;
+        pc.requestTimeoutMs = c.requestTimeoutMs;
+        pc.maxRetries = c.maxRetries;
+        pc.maxConcurrency = c.maxConcurrency;
+        pc.trace = Trace(c.traceFile);
+        return makePiWebApiBackend(std::move(pc), makeLoopbackTransport());
 #endif
     }
     throw Error("08001", "Backend=" + c.backend + " is not recognized; expected fixture or piwebapi.");

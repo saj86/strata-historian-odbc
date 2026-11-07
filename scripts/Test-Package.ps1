@@ -29,4 +29,8 @@ Remove-Item $trace -ErrorAction SilentlyContinue
 & (Join-Path $root 'bin\odbc_smoke.exe') StrataFixture StrataFixturePreview 'DRIVER={Strata Historian ODBC Driver};' (Join-Path $root 'fixtures\expected_pressure_window.csv') $trace
 if ($LASTEXITCODE) { throw "odbc_smoke failed with exit code $LASTEXITCODE" }
 
+Write-Host '--- PI Web API path against a local mock (not a real PI server)'
+& "$PSScriptRoot\Test-DriverWithMock.ps1"
+if ($LASTEXITCODE) { throw "Test-DriverWithMock failed with exit code $LASTEXITCODE" }
+
 Write-Host 'ALL PASSED'

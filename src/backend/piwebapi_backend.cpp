@@ -222,7 +222,7 @@ public:
         if (n == r.pageSize) {
             if (runAtLast == n) {
                 // The whole page shares one timestamp: this page size cannot make progress.
-                throw Error("HY000", "More than PageSize=" + std::to_string(r.pageSize) + " events share timestamp " + lastRaw + "; raise PageSize. The result is incomplete.");
+                throw Error("HY000", "At least PageSize=" + std::to_string(r.pageSize) + " events share timestamp " + lastRaw + "; raise PageSize. The result is incomplete.");
             }
             page.continuation = encodeRecordedContinuation(lastRaw, runAtLast);
         }

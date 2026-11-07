@@ -9,7 +9,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(strata_core STATIC
   src/core/timeutil.cpp src/core/json.cpp src/core/catalog.cpp src/core/sql.cpp src/core/planner.cpp
-  src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp
+  src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp src/backend/loopback_transport.cpp
   src/odbc/config.cpp)
 if(MSVC)
   target_compile_options(strata_core PRIVATE /W4 /permissive- /utf-8)

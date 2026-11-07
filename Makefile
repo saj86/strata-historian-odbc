@@ -76,7 +76,7 @@ package-windows: $(VENV)/.done
 	ZIGCXX="$(VENV)/bin/python -m ziglang c++" OUT=$(ROOT)/build/cross-windows scripts/cross-check-windows.sh >/dev/null
 	rm -rf dist/$(PKG) && mkdir -p dist/$(PKG)/bin dist/$(PKG)/scripts dist/$(PKG)/fixtures dist/$(PKG)/docs dist/$(PKG)/powerquery
 	cp build/cross-windows/strataodbc.dll build/cross-windows/core_tests.exe build/cross-windows/odbc_smoke.exe dist/$(PKG)/bin/
-	cp scripts/Install-Portable.ps1 scripts/Test-Package.ps1 scripts/Provision-StrataDsn.ps1 scripts/Test-StrataNode.ps1 dist/$(PKG)/scripts/
+	cp scripts/Install-Portable.ps1 scripts/Test-Package.ps1 scripts/Test-DriverWithMock.ps1 scripts/MockPiWebApi.ps1 scripts/Test-PiWebApi.ps1 scripts/Provision-StrataDsn.ps1 scripts/Test-StrataNode.ps1 dist/$(PKG)/scripts/
 	cp fixtures/expected_pressure_window.csv dist/$(PKG)/fixtures/
 	cp docs/powerbi-acceptance.md dist/$(PKG)/docs/
 	cp powerquery/examples.pq dist/$(PKG)/powerquery/

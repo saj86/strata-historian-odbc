@@ -8,7 +8,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 : "${ZIGCXX:?set ZIGCXX, for example: python3 -m ziglang c++}"
 OUT=${OUT:-$ROOT/build/cross-windows}
 mkdir -p "$OUT"
-CORE="src/core/timeutil.cpp src/core/json.cpp src/core/catalog.cpp src/core/sql.cpp src/core/planner.cpp src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp src/odbc/config.cpp"
+CORE="src/core/timeutil.cpp src/core/json.cpp src/core/catalog.cpp src/core/sql.cpp src/core/planner.cpp src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp src/backend/loopback_transport.cpp src/odbc/config.cpp"
 FLAGS="-target x86_64-windows-gnu -std=c++20 -O1 -Wall -Wextra -fvisibility=hidden"
 cd "$ROOT"
 $ZIGCXX $FLAGS -shared -o "$OUT/strataodbc.dll" $CORE src/odbc/driver.cpp src/odbc/setup_win.cpp src/odbc/strataodbc.def src/odbc/version.rc -lwinhttp -lodbccp32 -luser32
