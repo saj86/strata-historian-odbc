@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- WiX v5. x64 per-machine MSI: installs the DLL and registers the driver. Creates no DSN and no secrets. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package Name="Strata Historian ODBC Driver"
+           Manufacturer="Internal"
+           Version="$(var.ProductVersion)"
+           UpgradeCode="6F7C1B7E-4B1E-4C2A-9D57-3E8A0C5D2F11"
+           Scope="perMachine"
+           InstallerVersion="500"
+           Compressed="yes">
+    <MajorUpgrade Schedule="afterInstallInitialize"
+                  DowngradeErrorMessage="A newer version is installed. To roll back, uninstall it first, then install the older signed MSI. See docs/operator-guide.md." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <!-- WiX refuses to build this for anything but x64 (-arch x64); this also blocks a 32-bit OS. -->
+    <Launch Condition="VersionNT64" Message="This driver requires 64-bit Windows." />
+
+    <StandardDirectory Id="ProgramFiles64Folder">
+      <Directory Id="INSTALLFOLDER" Name="Strata Historian ODBC" />
+    </StandardDirectory>
+
+    <Feature Id="Driver" Title="ODBC driver" Level="1">
+      <Component Id="DriverDll" Directory="INSTALLFOLDER" Bitness="always64" Guid="9C0D1E55-2F4B-4A7E-8C33-1B7D6A9E4F20">
+        <File Id="StrataOdbcDll" Source="$(var.DriverPath)" KeyPath="yes" />
+      </Component>
+      <!-- Standard ODBC driver registration; 64-bit hive only. The driver owns these names. -->
+      <Component Id="DriverRegistry" Directory="INSTALLFOLDER" Bitness="always64" Guid="1D2E8B44-7A63-4F19-B6C2-5E0A9C3D7F31">
+        <RegistryValue Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers" Name="Strata Historian ODBC Driver" Type="string" Value="Installed" KeyPath="yes" />
+        <RegistryKey Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\Strata Historian ODBC Driver">
+          <RegistryValue Name="Driver" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
+          <RegistryValue Name="Setup" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
+          <RegistryValue Name="APILevel" Type="string" Value="1" />
+          <RegistryValue Name="ConnectFunctions" Type="string" Value="YYN" />
+          <RegistryValue Name="DriverODBCVer" Type="string" Value="03.52" />
+          <RegistryValue Name="FileUsage" Type="string" Value="0" />
+          <RegistryValue Name="SQLLevel" Type="string" Value="0" />
+          <RegistryValue Name="UsageCount" Type="integer" Value="1" />
+        </RegistryKey>
+      </Component>
+    </Feature>
+  </Package>
+</Wix>
