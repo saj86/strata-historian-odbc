@@ -61,7 +61,7 @@ Preview Rows In Model = CALCULATE ( [Events], PressureEvents[ResultScope] = "PRE
 
 Expected fixture values: Events 7, Good 85.7% (6 of 7), Bad 1, Questionable or Substituted 2, Last Source Event `2026-01-15 08:15:00`. Last Refresh is whenever it ran, deliberately distinct.
 
-No `.pbix` is shipped: one could not be produced or checked here.
+This page ships ready-made as a Power BI Project: open `samples/powerbi/project/StrataHistorian.pbip` and refresh, then compare it to the expected values in the project's README. It hasn't been opened in Desktop, so also record whether it opens cleanly. It uses DSN `StrataFixture` and the window `07:00` to `09:00`, which returns the same 7 pressure rows, and adds 4 run status rows.
 
 ## DirectQuery
 

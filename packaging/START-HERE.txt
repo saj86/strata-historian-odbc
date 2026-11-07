@@ -31,6 +31,7 @@ WHAT TO OPEN
 WHAT'S IN THE FOLDERS
   bin\            strataodbc.dll (the driver), core_tests.exe, odbc_smoke.exe
   samples\        powershell\, csharp\StrataSample\, powerbi\
+                  Open samples\powerbi\project\StrataHistorian.pbip in Power BI Desktop
   scripts\        Install, DSN, health check and test scripts
   docs\           All documents
   powerquery\     Power Query examples and the optional custom connector source

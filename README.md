@@ -52,7 +52,7 @@ python3 -B -m unittest discover -s fabric/tests
 |---|---|---|
 | PowerShell module and script | `samples/powershell/` | Ran on macOS against the fixture; Not run on Windows |
 | C# (.NET 10, `System.Data.Odbc`) | `samples/csharp/StrataSample/` | Ran on macOS against the fixture; Not run on Windows |
-| Power BI M queries and DAX | `samples/powerbi/` | Not run |
+| Power BI project (`.pbip`), M queries and DAX | `samples/powerbi/` | Project passed Microsoft's schemas and TMDL parser; not opened in Power BI Desktop |
 
 On macOS or Linux, `make install` installs the driver and fixture DSNs under `~/.local/strata-odbc`, and `make test` and `make query` cover the rest. `make package` builds one complete zip with the Windows binaries, documents, examples and source. See the top of the `Makefile`.
 

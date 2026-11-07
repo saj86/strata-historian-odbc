@@ -26,7 +26,9 @@ The Windows ODBC Driver Manager (`odbc32`) loads the driver; the driver doesn't 
 |---|---|---|
 | unixODBC | Open source (LGPL) | Portable driver-manager tests only |
 | zig (mingw-w64 target), `pefile` | Open source | Cross-compile check and PE inspection on non-Windows hosts |
-| Python 3 standard library | Open source | Mock server, Fabric rules tests |
+| Python 3 standard library | Open source | Mock server, Fabric rules and Power BI project tests |
+| `jsonschema`, `referencing` | Open source | Power BI project schema checks |
+| `Microsoft.AnalysisServices.NetCore.retail.amd64` | Microsoft NuGet package; check its licence terms before redistributing | Parses TMDL in `tools/tmdlcheck`. Downloaded at check time, never shipped |
 
 ## Site-provided, for later gates
 

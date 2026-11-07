@@ -150,6 +150,16 @@ try {
 
 Import data with a bounded SQL query through Power BI's built-in ODBC connector; no custom connector is needed. **None of this has run in Power BI yet,** so treat the first attempt as a test. The queries are in `samples/powerbi`.
 
+**Fastest start: open the ready-made project.** `samples/powerbi/project/StrataHistorian.pbip` is a Power BI Project with the model and a one-page report already built. It passed Microsoft's JSON schemas and TMDL parser, but hasn't been opened in Power BI Desktop yet.
+
+1. Install the driver and fixture DSNs, then open `StrataHistorian.pbip` in a recent Power BI Desktop.
+2. The project holds no data, so choose **Refresh**. If asked, choose Default or Custom credentials and approve running the native queries.
+3. Check the page: Data Source `fixture`, Events 7, Good Events 85.7%, Bad Or System Events 1, Questionable Or Substituted 2, Last Source Event 2026-01-15 08:15:00, and 4 run status rows. Preview Rows In Model should be blank.
+
+For real data, go to Transform data > Edit parameters and change `Dsn`, `PressurePointId`, `RunPointId`, `WindowStartUtc` and `WindowEndUtc`.
+
+The steps below build the same thing by hand.
+
 **Import a window.** In Power BI Desktop choose Get Data > Blank Query > Advanced Editor, then paste:
 
 ```powerquery

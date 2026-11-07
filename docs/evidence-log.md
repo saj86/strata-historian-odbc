@@ -53,6 +53,7 @@ macOS arm64, Apple clang 21, unixODBC 2.3.14 built privately, zig 0.17.1 (mingw-
 | C# and PowerShell samples through .NET `OdbcConnection` | Passed | A second, independent ODBC client works on the same driver: parameters, typed reads, NULLs, errors, cancel | Behavior of .NET's Windows driver-manager path |
 | Fabric rules model | Passed: 29 tests | Replay, crash, watermark, amend, delete, checksum, precision, window validation and point merge rules | Spark, Delta or Fabric |
 | PowerShell scripts | 0 parse errors (PowerShell 7) | Syntax | Any behavior; they need Windows |
+| Power BI project: consistency tests, JSON schemas, TMDL parser, SQL through the driver | Passed: 8 tests; 17 files; 4 tables, 8 measures, 2 relationships; 2, 7 and 4 rows | The files match Microsoft's formats and agree with each other and the driver | That Desktop opens them, that DAX and M run, or how the page looks |
 | `tests/mock_piwebapi.py` | Passed: manual `curl` of 3 routes | The mock responds | Anything about PI |
 | WiX build | **Failed on macOS: WIX0389**; same error with a no-space name, and WiX warns it supports only Windows | Nothing. Treat MSI as Not run | |
 

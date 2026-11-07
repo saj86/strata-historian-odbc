@@ -27,6 +27,10 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | PowerShell sample through `OdbcConnection` | macOS, PowerShell 7.6, unixODBC | Passed | 7 rows, refusal, CSV export, chunked windows |
 | `make build`, `test`, `install`, `uninstall`, `package-windows` | macOS | Passed | Clean rebuild; queried through the installed driver |
 | Fabric rules model | Python 3.14 | Passed | 29 tests |
+| Power BI project consistency | Python 3.14 | Passed | 8 tests: visual fields, model columns, SQL and driver catalog agree |
+| Power BI project JSON | Microsoft's published schemas | Passed | 17 files, 0 errors. A deliberately broken copy was rejected |
+| Power BI project model | Microsoft's TMDL parser (`Microsoft.AnalysisServices` 19.84.1) | Passed | 4 tables, 8 measures, 2 relationships. A broken copy was rejected |
+| Power BI project SQL through the installed driver | macOS, unixODBC | Passed | 2, 7 and 4 rows |
 | Mutation check (run before the 2026-11-07 fixes, not repeated) | macOS | Passed | 16 mutants: 14 detected, 2 equivalent |
 | PowerShell scripts parse | PowerShell 7.6 on macOS | Passed | 0 parse errors. **Syntax only** |
 | JSON artifacts parse | Python | Passed | |
@@ -36,6 +40,7 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only; this code has never executed |
 | PowerShell behavior | | Not run | |
 | Power Query M, `.mez` | | Not run | |
+| Power BI project opened in Desktop, DAX measures, M queries, page layout | | Not run | No schema or parser here evaluates these |
 | PySpark notebooks, `curated_tables.sql` | | Not run | No Java on this host. Syntax parsed only |
 | Samples and test package on Windows | | Not run | |
 | GitHub Actions workflow | | Not run | |
