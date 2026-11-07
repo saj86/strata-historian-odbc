@@ -1,0 +1,9 @@
+// Add these as measures. They assume the PressureEvents and RefreshStamp queries.
+Events = COUNTROWS ( PressureEvents )
+Good Events % = DIVIDE ( CALCULATE ( [Events], PressureEvents[IsGood] = TRUE () ), [Events] )
+Bad Or System Events = CALCULATE ( [Events], PressureEvents[IsGood] = FALSE () )
+Questionable Or Substituted = CALCULATE ( [Events], PressureEvents[IsQuestionable] = TRUE () || PressureEvents[IsSubstituted] = TRUE () )
+Last Source Event UTC = MAX ( PressureEvents[EventUtc] )
+Last Refresh UTC = MAX ( RefreshStamp[RefreshedUtc] )
+// Should be blank. A number means a capped preview got into the model.
+Preview Rows In Model = CALCULATE ( [Events], PressureEvents[ResultScope] = "PREVIEW" )
