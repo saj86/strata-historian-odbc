@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExtractionControlRecord",
+  "description": "One record per PI source, dataset, point batch, UTC window and attempt. Window start inclusive, end exclusive.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_server", "dataset", "point_batch_id", "window_start_utc", "window_end_utc", "run_id", "attempt", "status", "observed_count", "last_committed_watermark_utc"],
+  "properties": {
+    "source_server": {"type": "string"},
+    "dataset": {"type": "string", "enum": ["recorded_events", "points", "af_attributes", "event_frames"]},
+    "point_batch_id": {"type": "string"},
+    "window_start_utc": {"type": "string", "format": "date-time"},
+    "window_end_utc": {"type": "string", "format": "date-time"},
+    "run_id": {"type": "string"},
+    "attempt": {"type": "integer", "minimum": 1},
+    "status": {"type": "string", "enum": ["PENDING", "EXTRACTED", "VALIDATED", "COMMITTED", "FAILED", "DENIED"]},
+    "expected_count": {"type": ["integer", "null"], "description": "Null when the source offers no independent count."},
+    "observed_count": {"type": "integer", "minimum": 0},
+    "checksum": {"type": ["string", "null"]},
+    "error": {"type": ["string", "null"]},
+    "last_committed_watermark_utc": {"type": ["string", "null"], "format": "date-time", "description": "Advances only over a contiguous run of COMMITTED windows."}
+  }
+}

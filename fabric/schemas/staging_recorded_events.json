@@ -1,0 +1,10 @@
+{
+  "description": "Immutable per-attempt staging. Path: Files/staging/recorded_events/source=<s>/point=<p>/window=<start>/run=<run>/attempt=<n>/. Column names match the driver catalog plus lineage.",
+  "columns": [
+    ["SourceBackend", "string"], ["SourceServer", "string"], ["PointId", "string"], ["TagName", "string"],
+    ["EventUtc", "timestamp"], ["EventUtcRaw", "string"], ["EventSeq", "int"], ["RetrievalMode", "string"],
+    ["ValueKind", "string"], ["NumericValue", "double"], ["TextValue", "string"], ["DigitalCode", "int"], ["StateText", "string"],
+    ["EngUnits", "string"], ["IsGood", "boolean"], ["IsQuestionable", "boolean"], ["IsSubstituted", "boolean"], ["IsAnnotated", "boolean"],
+    ["ResultScope", "string"], ["window_start_utc", "timestamp"], ["window_end_utc", "timestamp"], ["run_id", "string"], ["attempt", "int"]
+  ]
+}

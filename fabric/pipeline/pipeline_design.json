@@ -1,0 +1,27 @@
+{
+  "_status": "DESIGN, NOT AN EXPORT. Build it in the Fabric UI, then export and commit the real JSON after the pilot. No tenant has executed this.",
+  "name": "pl_strata_recorded_ingest",
+  "parameters": {
+    "SourceServer": "string",
+    "WindowStartUtc": "string, ISO 8601 UTC, validated by nb_validate_window",
+    "WindowEndUtc": "string, ISO 8601 UTC, validated by nb_validate_window",
+    "PointBatchId": "string, must exist in the control table; never free text"
+  },
+  "activities": [
+    {"name": "nb_validate_window", "type": "Notebook", "purpose": "Parse both bounds as UTC, require end > start and within MaxWindowDays, look the point up in the control table, and return canonical literals. Fails the pipeline on anything else."},
+    {"name": "copy_window_to_staging", "type": "Copy", "dependsOn": ["nb_validate_window"],
+     "source": {"connection": "ODBC via on-premises gateway (Basic or Anonymous per the connector matrix)",
+                "useQuery": "Query", "queryTimeout": "00:30:00",
+                "query": "@concat('SELECT * FROM RecordedValues WHERE PointId = ''', activity('nb_validate_window').output.result.exitValue.point_id, ''' AND EventUtc >= {ts ''', activity('nb_validate_window').output.result.exitValue.start_literal, '''} AND EventUtc < {ts ''', activity('nb_validate_window').output.result.exitValue.end_literal, '''}')"},
+     "sink": {"type": "Lakehouse files", "format": "Parquet", "path": "@concat('staging/recorded_events/source=', pipeline().parameters.SourceServer, '/point=', pipeline().parameters.PointBatchId, '/window=', replace(pipeline().parameters.WindowStartUtc, ':', ''), '/run=', pipeline().RunId, '/attempt=1/')"},
+     "mapping": "Explicit, from fabric/schemas/staging_recorded_events.json. Do not auto-map.",
+     "retry": 1, "retryIntervalInSeconds": 120, "parallelCopies": 1},
+    {"name": "nb_curate", "type": "Notebook", "dependsOn": ["copy_window_to_staging"], "notebook": "fabric/notebooks/curate_recorded_events.py", "purpose": "Validate, replace the window in the curated table, then advance the control record. Idempotent."},
+    {"name": "signal_complete", "type": "Set variable or downstream trigger", "dependsOn": ["nb_curate"], "purpose": "Completion signal for the semantic model refresh."}
+  ],
+  "notes": [
+    "The query uses validated literals because ODBC ? binding in native code does not establish that Pipeline Copy can bind ? placeholders.",
+    "Test both connection string forms in the pilot: dsn=StrataPI and Driver={Strata Historian ODBC Driver};... Attributes after a DSN are dropped per Microsoft, so all settings belong in the DSN.",
+    "Run windows with bounded concurrency. Out-of-order completion is safe: the watermark only moves over contiguous COMMITTED windows."
+  ]
+}
