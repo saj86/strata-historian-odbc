@@ -33,20 +33,21 @@ function Get-StrataPoint {
 
 function Get-StrataRecordedValue {
     <#
-    .SYNOPSIS Reads recorded events for one point. Start is inclusive, End is exclusive, both UTC.
+    .SYNOPSIS Reads recorded events for one point, by -TagName or -PointId. Start is inclusive, End is exclusive, both UTC.
               Windows longer than -ChunkHours are split, so MaxWindowDays is never exceeded.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'ByTag')]
     param(
         [Parameter(Mandatory)][System.Data.Odbc.OdbcConnection]$Connection,
-        [Parameter(Mandatory)][string]$PointId,
+        [Parameter(Mandatory, ParameterSetName = 'ByTag')][string]$TagName,
+        [Parameter(Mandatory, ParameterSetName = 'ById')][string]$PointId,
         [Parameter(Mandatory)][datetime]$Start,
         [Parameter(Mandatory)][datetime]$End,
         [ValidateRange(1, 744)][int]$ChunkHours = 24,
         [int]$TimeoutSeconds = 300
     )
     $sql = 'SELECT PointId, TagName, EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, TextValue, DigitalCode, StateText, EngUnits, IsGood, IsQuestionable, IsSubstituted, IsAnnotated, SourceBackend ' +
-           'FROM RecordedValues WHERE PointId = ? AND EventUtc >= ? AND EventUtc < ?'
+           "FROM RecordedValues WHERE $(if ($TagName) { 'TagName' } else { 'PointId' }) = ? AND EventUtc >= ? AND EventUtc < ?"
     $from = $Start
     while ($from -lt $End) {
         $to = $from.AddHours($ChunkHours)
@@ -55,7 +56,7 @@ function Get-StrataRecordedValue {
         try {
             $command.CommandText = $sql
             $command.CommandTimeout = $TimeoutSeconds
-            $p1 = $command.Parameters.Add('PointId', [System.Data.Odbc.OdbcType]::NVarChar, 256); $p1.Value = $PointId
+            $p1 = $command.Parameters.Add('Point', [System.Data.Odbc.OdbcType]::NVarChar, 256); $p1.Value = if ($TagName) { $TagName } else { $PointId }
             $p2 = $command.Parameters.Add('From', [System.Data.Odbc.OdbcType]::DateTime); $p2.Value = $from
             $p3 = $command.Parameters.Add('To', [System.Data.Odbc.OdbcType]::DateTime); $p3.Value = $to
             Read-StrataRows $command

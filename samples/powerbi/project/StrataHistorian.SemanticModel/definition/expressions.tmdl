@@ -3,13 +3,13 @@ expression Dsn = "StrataFixture" meta [IsParameterQuery=true, Type="Text", IsPar
 
 	annotation PBI_ResultType = Text
 
-/// PointId of the pressure point, from the Points table.
-expression PressurePointId = "PT-PRESSURE-001" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+/// Tag name of the pressure point. Letter case doesn't matter.
+expression PressureTag = "SYN.PRESSURE.PV" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 
 	annotation PBI_ResultType = Text
 
-/// PointId of the run state point, from the Points table.
-expression RunPointId = "PT-RUNSTATE-001" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+/// Tag name of the run state point. Letter case doesn't matter.
+expression RunTag = "SYN.RUNSTATE" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
 
 	annotation PBI_ResultType = Text
 

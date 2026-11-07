@@ -5,7 +5,7 @@ let
     Literal = (d as datetime) as text => DateTime.ToText(d, [Format = "yyyy-MM-dd HH:mm:ss", Culture = "en-US"]),
     Sql =
         "SELECT PointId, TagName, EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, DigitalCode, StateText, EngUnits, IsGood, IsQuestionable, IsSubstituted, IsAnnotated " &
-        "FROM RecordedValues WHERE PointId = 'REPLACE-WITH-POINT-ID' " &
+        "FROM RecordedValues WHERE TagName = 'REPLACE-WITH-TAG-NAME' " &
         "AND EventUtc >= {ts '" & Literal(RangeStart) & "'} AND EventUtc < {ts '" & Literal(RangeEnd) & "'}",
     Source = Odbc.Query("dsn=StrataPI", Sql),
     Filtered = Table.SelectRows(Source, each [EventUtc] >= RangeStart and [EventUtc] < RangeEnd)

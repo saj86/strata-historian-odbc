@@ -14,7 +14,6 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 PROJECT = ROOT / "samples" / "powerbi" / "project"
 TMDL = PROJECT / "StrataHistorian.SemanticModel" / "definition"
-PARAMS = {"PressurePointId": "PT-PRESSURE-001", "RunPointId": "PT-RUNSTATE-001"}
 
 
 def read_table(path):
@@ -108,7 +107,7 @@ class Project(unittest.TestCase):
     def test_event_reads_are_bounded_and_exclusive_at_the_end(self):
         for name in ("PressureEvents", "RunEvents"):
             sql = resolved_sql(tables()[name][2])
-            self.assertRegex(sql, r"WHERE PointId = 'PT-[\w-]+' AND EventUtc >= \{ts '[\d: -]+'\} AND EventUtc < \{ts '[\d: -]+'\}$")
+            self.assertRegex(sql, r"WHERE TagName = 'SYN\.[\w.]+' AND EventUtc >= \{ts '[\d: -]+'\} AND EventUtc < \{ts '[\d: -]+'\}$")
 
     def test_pressure_chart_averages_rather_than_sums(self):
         path = next(PROJECT.rglob("pressure_trend/visual.json"))

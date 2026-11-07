@@ -24,7 +24,7 @@ The chart has a gap at the `Bad Input` event. At `08:00:10`, a real 0 appears ne
 
 ## Use real data
 
-Go to Transform data > Edit parameters and change `Dsn`, `PressurePointId`, `RunPointId`, `WindowStartUtc` and `WindowEndUtc`. Times are UTC, with the start inclusive and the end exclusive. Take point IDs from the `Points` table. The window must stay within the DSN's `MaxWindowDays`.
+Go to Transform data > Edit parameters and change `Dsn`, `PressureTag`, `RunTag`, `WindowStartUtc` and `WindowEndUtc`. Times are UTC, with the start inclusive and the end exclusive. The tags are your PI tag names, and letter case doesn't matter. The window must stay within the DSN's `MaxWindowDays`.
 
 ## If Desktop reports an error
 

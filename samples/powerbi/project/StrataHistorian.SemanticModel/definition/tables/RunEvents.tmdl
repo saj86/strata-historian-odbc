@@ -129,7 +129,7 @@ table RunEvents
 				    Literal = (d as datetime) as text => DateTime.ToText(d, [Format = "yyyy-MM-dd HH:mm:ss", Culture = "en-US"]),
 				    Sql =
 				        "SELECT PointId, TagName, EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, TextValue, DigitalCode, StateText, EngUnits, IsGood, IsQuestionable, IsSubstituted, IsAnnotated, ResultScope, SourceBackend " &
-				        "FROM RecordedValues WHERE PointId = '" & Text.Replace(RunPointId, "'", "''") & "' " &
+				        "FROM RecordedValues WHERE TagName = '" & Text.Replace(RunTag, "'", "''") & "' " &
 				        "AND EventUtc >= {ts '" & Literal(WindowStartUtc) & "'} AND EventUtc < {ts '" & Literal(WindowEndUtc) & "'}",
 				    Source = Odbc.Query("dsn=" & Dsn, Sql)
 				in

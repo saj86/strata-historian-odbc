@@ -1,11 +1,11 @@
-// Usage: dotnet run -- [dsn] [pointId] [startUtc] [endUtc]
+// Usage: dotnet run -- [dsn] [tagName] [startUtc] [endUtc]
 // Defaults read the synthetic fixture. Credentials, when needed, come from the environment and never from the DSN.
 using System.Data;
 using System.Data.Odbc;
 using System.Globalization;
 
 string dsn = args.ElementAtOrDefault(0) ?? "StrataFixture";
-string pointId = args.ElementAtOrDefault(1) ?? "PT-PRESSURE-001";
+string tagName = args.ElementAtOrDefault(1) ?? "SYN.PRESSURE.PV";
 DateTime start = ParseUtc(args.ElementAtOrDefault(2) ?? "2026-01-15T08:00:00Z");
 DateTime end = ParseUtc(args.ElementAtOrDefault(3) ?? "2026-01-15T09:00:00Z");
 
@@ -34,7 +34,7 @@ using (var reader = command.ExecuteReader())
 
 // 2. Read a bounded window with bound parameters. Parameters are positional.
 Console.WriteLine("\n--- Recorded values");
-var events = await ReadRecordedAsync(connection, pointId, start, end, CancellationToken.None);
+var events = await ReadRecordedAsync(connection, tagName, start, end, CancellationToken.None);
 foreach (var e in events)
 {
     // Keep "no number" distinct from zero, and show the state for system and digital values.
@@ -85,7 +85,7 @@ if (dsn.StartsWith("StrataFixture", StringComparison.OrdinalIgnoreCase))
     var clock = System.Diagnostics.Stopwatch.StartNew();
     try
     {
-        var rows = await ReadRecordedAsync(slow, "PT-SLOW-001", ParseUtc("2026-01-16T00:00:00Z"), ParseUtc("2026-01-17T00:00:00Z"), cts.Token);
+        var rows = await ReadRecordedByIdAsync(slow, "PT-SLOW-001", ParseUtc("2026-01-16T00:00:00Z"), ParseUtc("2026-01-17T00:00:00Z"), cts.Token);
         Console.WriteLine($"Finished before the cancel fired: {rows.Count} rows");
     }
     catch (OperationCanceledException)
@@ -94,15 +94,21 @@ if (dsn.StartsWith("StrataFixture", StringComparison.OrdinalIgnoreCase))
     }
 }
 
-static async Task<List<RecordedEvent>> ReadRecordedAsync(OdbcConnection connection, string pointId, DateTime startUtc, DateTime endUtc, CancellationToken token)
+static Task<List<RecordedEvent>> ReadRecordedAsync(OdbcConnection connection, string tagName, DateTime startUtc, DateTime endUtc, CancellationToken token) =>
+    ReadAsync(connection, "TagName", tagName, startUtc, endUtc, token);
+
+static Task<List<RecordedEvent>> ReadRecordedByIdAsync(OdbcConnection connection, string pointId, DateTime startUtc, DateTime endUtc, CancellationToken token) =>
+    ReadAsync(connection, "PointId", pointId, startUtc, endUtc, token);
+
+static async Task<List<RecordedEvent>> ReadAsync(OdbcConnection connection, string column, string point, DateTime startUtc, DateTime endUtc, CancellationToken token)
 {
-    const string sql = """
+    string sql = $"""
         SELECT EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, IsGood
         FROM RecordedValues
-        WHERE PointId = ? AND EventUtc >= ? AND EventUtc < ?
+        WHERE {column} = ? AND EventUtc >= ? AND EventUtc < ?
         """;
     using var command = new OdbcCommand(sql, connection) { CommandTimeout = 300 };
-    command.Parameters.Add("PointId", OdbcType.NVarChar, 256).Value = pointId;
+    command.Parameters.Add("Point", OdbcType.NVarChar, 256).Value = point;
     command.Parameters.Add("Start", OdbcType.DateTime).Value = startUtc;   // inclusive
     command.Parameters.Add("End", OdbcType.DateTime).Value = endUtc;       // exclusive
 
