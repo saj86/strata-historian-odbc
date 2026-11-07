@@ -1,0 +1,11 @@
+# Hand-written golden result. Query: SELECT EventUtc, NumericValue, StateText, IsGood FROM RecordedValues
+# WHERE PointId = 'PT-PRESSURE-001' AND EventUtc >= 2026-01-15T08:00:00Z AND EventUtc < 2026-01-15T09:00:00Z
+# Synthetic fixture data, never PI data. <NULL> is SQL NULL. 2026-01-15T10:00 event is outside the window.
+EventUtc,NumericValue,StateText,IsGood
+2026-01-15 08:00:00.0000000,101.5,<NULL>,1
+2026-01-15 08:00:10.0000000,0,<NULL>,1
+2026-01-15 08:00:10.0000153,102.25,<NULL>,1
+2026-01-15 08:00:10.0000153,102.5,<NULL>,1
+2026-01-15 08:05:00.0000000,<NULL>,Bad Input,0
+2026-01-15 08:10:00.0000000,103,<NULL>,1
+2026-01-15 08:15:00.0000000,104,<NULL>,1
