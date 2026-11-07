@@ -27,6 +27,10 @@ Get-AuthenticodeSignature build\strataodbc-0.1.0-x64.msi
 
 Bump `ProductVersion` for every release: `MajorUpgrade` keys on it. Keep each released signed MSI for rollback. Change `src/odbc/version.h` and `project(VERSION)` in `CMakeLists.txt` together: the DLL's file version and `SQL_DRIVER_VER` come from that header.
 
+## Build the installer
+
+`scripts\Build-Installer.ps1` builds `dist\strataodbc-<version>-x64.msi` with the setup wizard, using only the .NET SDK. The version comes from `src\odbc\version.h`, and the script refuses a DLL whose version differs. Pass `-CertificateThumbprint` and `-TimestampUrl` to sign both the DLL and the MSI.
+
 ## Install, upgrade, repair, uninstall
 
 ```powershell

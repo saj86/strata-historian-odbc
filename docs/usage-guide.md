@@ -33,7 +33,28 @@ This installs the driver, creates the `StrataFixture` and `StrataFixturePreview`
 powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninstall
 ```
 
-**Gateway or production host: use the signed MSI.** Build it on Windows with `scripts\Build-And-Test.ps1`, sign it, then install it and create the DSN:
+**Any machine: use the installer.** Build the MSI on Windows with one command. It needs the .NET SDK, but not Visual Studio:
+
+```powershell
+.\scripts\Build-Installer.ps1
+```
+
+Double-click the MSI for the setup wizard: Welcome, licence, then choose the features and folder. Features are the driver (required), documents and examples, and an experimental OLE DB data link. On the last page, leave **Open ODBC Data Sources** ticked to set up a data source straight away. The installer and the setup window haven't been run yet, so report anything that doesn't match.
+
+**Set up a data source in Windows.** Open **ODBC Data Sources (64-bit)** from the Start menu, choose the **System DSN** tab, then **Add**, pick **Strata Historian ODBC Driver**, and select **Finish**. A settings window opens:
+
+| Setting | What to enter |
+| --- | --- |
+| Data source name | A name your reports will use, for example `StrataPI`. Use the same name on every gateway |
+| Data from | **PI Web API**, or **Test data** for the synthetic fixture |
+| PI Web API URL | For example `https://piweb.example.local/piwebapi` |
+| PI data server | The PI Data Archive name, as `Test-PiWebApi.ps1` lists it |
+| Sign-in | Windows, user name and password, or none, matching what PI Web API offers |
+| Limits and options | Usually leave the defaults. Tick the preview box only on authoring machines |
+
+Fill in **User name** and **Password** only to try **Test**: they're used once and never saved. Select **OK** to save. **Configure** reopens the same window later.
+
+**Gateway or production host: use the signed MSI.** Build it with your organization's certificate, then install it silently and create the DSN with a script:
 
 ```powershell
 .\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.1.0-x64.msi -ExpectedThumbprint <thumbprint>
@@ -235,6 +256,16 @@ SELECT EventUtc, NumericValue, StateText, IsGood FROM RecordedValues WHERE TagNa
 ```
 
 3. Choose Default or Custom credentials, then Load. You should get 7 rows.
+
+## OLE DB (experimental)
+
+Programs that only speak OLE DB can use the driver through Microsoft's built-in **OLE DB Provider for ODBC Drivers** (MSDASQL), which is part of Windows. This hasn't been tested yet, so expect some features to fail, and report the errors.
+
+- **Data Link Properties window:** the installer's **OLE DB data link** Start menu item opens the classic OLE DB connection window. Choose your data source on the Connection tab, then **Test Connection**. To keep changes, copy the `.udl` file to your own folder first, because the installed copy is read-only.
+- **Connection string:** `Provider=MSDASQL;DSN=StrataPI`
+- **Example:** `samples\powershell\OleDb-Example.ps1`, in Windows PowerShell 5.1.
+
+A native OLE DB provider, registered under its own name as PI OLE DB is, would be a separate project.
 
 ## C# examples
 

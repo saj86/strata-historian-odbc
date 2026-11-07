@@ -41,6 +41,9 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | Driver DLL loaded by the Windows driver manager | | Not run | |
 | WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only. `Test-Package.ps1` now runs WinHTTP against the mock on Windows |
 | Excel over ODBC | | Not run | |
+| Setup wizard MSI | | Not run | Needs Windows. On macOS, WiX loaded the wizard extension, then stopped at its known Mac path errors |
+| Settings window in ODBC Data Sources | | Not run | Compiled into the DLL, and its layout checked by script: 30 controls, no overlaps. Its form logic is tested |
+| OLE DB through MSDASQL | | Not run | MSDASQL may need ODBC features the driver lacks |
 | PowerShell behavior | | Not run | |
 | Power Query M, `.mez` | | Not run | |
 | Power BI project opened in Desktop, DAX measures, M queries, page layout | | Not run | No schema or parser here evaluates these |
@@ -56,7 +59,6 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 - `PointId IN (...)` reads points one at a time.
 - `ORDER BY` other than natural order buffers rows in memory, up to `MaxRows`.
 - If `PageSize` or more events share one timestamp, the read raises an error. Raise `PageSize`.
-- `ConfigDSNW` has no dialog, by design. Use the provisioning script.
 - Pipeline correlation with driver traces is by point, window and time, not a shared ID.
 - `curated_af_attributes` and `curated_event_frames` are table definitions only, because no backend can fill them yet.
 - The driver version is set by hand in `src/odbc/version.h`; `Build-And-Test.ps1 -Version` only sets the MSI version, so change both together.
