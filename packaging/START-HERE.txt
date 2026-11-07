@@ -1,0 +1,43 @@
+Strata Historian ODBC Driver: complete package
+
+WHAT THIS IS
+Everything for the driver in one folder: Windows x64 binaries, documents, examples, install scripts,
+Power BI queries, Fabric files and the full source. VERSION.txt names the exact commit.
+
+STATUS, PLEASE READ
+This is an UNSIGNED TEST BUILD. Use it on a test machine, not on a gateway or production host.
+  - Tested on macOS with synthetic data: passed.
+  - Never yet run on Windows or in Power BI.
+  - Never yet connected to a real PI server.
+  - PI licensing: check docs\backend-decision.md before using real data.
+The Windows DLL here is cross-compiled. There is no MSI in this package: it must be built on Windows.
+
+QUICK TEST ON WINDOWS (64-bit Windows 10 or 11, nothing else needed)
+  1. Unzip, then rename the folder to C:\strata-test
+  2. Open 64-bit PowerShell as Administrator:
+       cd C:\strata-test
+       powershell -ExecutionPolicy Bypass -File .\scripts\Test-Package.ps1
+     It should end with ALL PASSED. If not, keep the output: it is useful.
+  3. To remove the driver afterwards:
+       powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninstall
+
+WHAT TO OPEN
+  docs\usage-guide.md             Install and use it, with PowerShell, Power BI and C# examples
+  docs\status-and-gates.md        What has and hasn't been tested, and open questions
+  docs\powerbi-acceptance.md      Step-by-step Power BI test
+  docs\operator-guide.md          Build the MSI, gateway deployment, upgrade and rollback
+  docs\backend-decision.md        Why PI Web API, and the licensing question
+
+WHAT'S IN THE FOLDERS
+  bin\            strataodbc.dll (the driver), core_tests.exe, odbc_smoke.exe
+  samples\        powershell\, csharp\StrataSample\, powerbi\
+  scripts\        Install, DSN, health check and test scripts
+  docs\           All documents
+  powerquery\     Power Query examples and the optional custom connector source
+  fabric\         Fabric design: notebooks, schemas, pipeline, tests
+  installer\      WiX source for the MSI
+  fixtures\       Expected test rows (synthetic)
+  src\ tests\ tools\  Full source, with CMakeLists.txt and Makefile at the top level
+
+CHECK THE FILES
+  SHA256SUMS.txt lists a hash for each file in bin\. Test-Package.ps1 checks them.
