@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The Windows setup program (strata-historian-odbc-setup-<version>.exe). A wizard that installs, updates, sets up
+    data sources for, and removes the Strata Historian ODBC Driver. scripts/build-setup.sh builds it on any OS with the
+    .NET 10 SDK, with the driver and documents embedded as payload.zip. Run it with demo to see every page without
+    changing anything. EnableWindowsTargeting lets it build on macOS and Linux.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AssemblyName>StrataSetup</AssemblyName>
+    <RootNamespace>StrataHistorian.Setup</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\strata.ico</ApplicationIcon>
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <Product>Strata Historian ODBC Driver Setup</Product>
+    <Company>Strata Historian project</Company>
+    <Description>Installs, updates, sets up data sources for, and removes the Strata Historian ODBC Driver.</Description>
+    <Version Condition="'$(Version)' == ''">0.0.0</Version>
+    <!-- Version numbers only: .NET would otherwise append the commit to the product version. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\logo.png" LogicalName="StrataHistorian.Setup.logo.png" />
+    <EmbeddedResource Include="$(SetupPayload)" LogicalName="StrataHistorian.Setup.payload.zip" Condition="'$(SetupPayload)' != ''" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Data.Odbc" Version="10.0.0" />
+    <PackageReference Include="System.Data.OleDb" Version="10.0.0" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="10.0.0" />
+  </ItemGroup>
+
+</Project>
