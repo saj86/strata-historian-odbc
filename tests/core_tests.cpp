@@ -131,6 +131,22 @@ static void testPlanner() {
     EXPECT_STATE("42000", buildPlan(parseSql("SELECT * FROM RecordedValues WHERE IsGood = 1"), {}, prev));
     EXPECT_STATE("42000", buildPlan(parseSql("SELECT * FROM RecordedValues WHERE PointId = 'a'"), {}, prev));
 
+    // TagName names points as PointId does, and still needs a window.
+    Plan byTag = plan("SELECT * FROM RecordedValues WHERE TagName = 'A' AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}");
+    CHECK(byTag.kind == PlanKind::Recorded && byTag.tagNames.size() == 1 && byTag.pointIds.empty());
+    CHECK(describeUpstream(byTag, lim).find("resolveTag(A) + readRecorded(") != std::string::npos);
+    EXPECT_STATE("42000", plan("SELECT * FROM RecordedValues WHERE TagName = 'A'"));
+    EXPECT_STATE("42000", plan("SELECT * FROM RecordedValues WHERE TagName <> 'A' AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}"));
+    EXPECT_STATE("HY000", buildPlan(parseSql("SELECT * FROM RecordedValues WHERE TagName = ? AND EventUtc >= ? AND EventUtc < ?"), {Value{}, std::string("2026-01-01"), std::string("2026-01-02")}, lim));
+    EXPECT_STATE("42000", buildPlan(parseSql("SELECT * FROM RecordedValues WHERE TagName IN ('a','b') AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}"), {}, tight));
+    Plan sameTag = plan("SELECT * FROM RecordedValues WHERE TagName IN ('a','A') AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}");
+    CHECK(sameTag.tagNames.size() == 1);
+    Plan both = plan("SELECT * FROM RecordedValues WHERE PointId = 'p' AND TagName = 'A' AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}");
+    CHECK(both.pointIds.size() == 1 && both.tagNames.empty());
+    const std::string tagBase = "SELECT * FROM RecordedValues WHERE TagName = 'a' AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}";
+    CHECK(!plan((tagBase + " ORDER BY EventUtc").c_str()).needsSort);
+    CHECK(plan((tagBase + " ORDER BY NumericValue").c_str()).needsSort);
+
     // Ordering: natural order streams, anything else sorts.
     const char* base = "SELECT * FROM RecordedValues WHERE PointId = 'a' AND EventUtc >= {ts '2026-01-01 00:00:00'} AND EventUtc < {ts '2026-01-02 00:00:00'}";
     CHECK(!plan(base).needsSort);
@@ -188,6 +204,21 @@ static void testFixtureSemantics() {
         for (size_t i = 0; i < r.size(); i++) if (std::get<double>(r[i][0]) != static_cast<double>(i)) ordered = false;
         CHECK(ordered);
     }
+    // By tag name: same rows as by PointId, in any letter case, and no way to probe a hidden point.
+    const char* kByTag = "SELECT NumericValue, TagName, PointId FROM RecordedValues WHERE TagName = ? AND EventUtc >= ? AND EventUtc < ?";
+    auto tagRows = run(kByTag, window("SYN.PRESSURE.PV", "2026-01-15T08:00:00Z", "2026-01-15T09:00:00Z"), *b);
+    CHECK(tagRows.size() == 7 && std::get<std::string>(tagRows[0][2]) == "PT-PRESSURE-001");
+    CHECK(run(kByTag, window("syn.pressure.pv", "2026-01-15T08:00:00Z", "2026-01-15T09:00:00Z"), *b).size() == 7);
+    EXPECT_STATE("42S02", run(kByTag, window("NO.SUCH.TAG", "2026-01-15T08:00:00Z", "2026-01-15T09:00:00Z"), *b));
+    EXPECT_STATE("42S02", run(kByTag, window("SYN.TEST.PT-DENIED-001", "2026-01-15T08:00:00Z", "2026-01-15T09:00:00Z"), *b));
+    CHECK(run("SELECT EventUtc FROM RecordedValues WHERE TagName IN ('SYN.PRESSURE.PV', 'syn.runstate') AND EventUtc >= {ts '2026-01-15 07:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}", {}, *b).size() == 11);
+    CHECK(run("SELECT PointId FROM RecordedValues WHERE PointId = 'PT-PRESSURE-001' AND TagName = 'syn.pressure.pv' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}", {}, *b).size() == 7);
+    CHECK(run("SELECT PointId FROM RecordedValues WHERE PointId = 'PT-PRESSURE-001' AND TagName = 'OTHER' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}", {}, *b).empty());
+    // Points filtering ignores case too.
+    CHECK(run("SELECT PointId FROM Points WHERE TagName = 'syn.runstate'", {}, *b).size() == 1);
+    CHECK(run("SELECT PointId FROM Points WHERE TagName IN ('SYN.RUNSTATE', 'syn.pressure.pv')", {}, *b).size() == 2);
+    CHECK(run("SELECT PointId FROM Points WHERE TagName <> 'syn.runstate'", {}, *b).size() == 1);
+
     // Row cap stops loudly; it never truncates quietly.
     Limits cap;
     cap.maxRows = 100;
@@ -345,6 +376,22 @@ static void testPiWebApi() {
         tooLong.fake->script.push_back(HttpResponse{429, "", "9999"});
         EXPECT_STATE("08S01", tooLong.read());
         CHECK(tooLong.fake->urls.size() == 1);  // policy refuses to wait that long
+    }
+    {   // a tag resolves to the point's WebId; a wider name filter result is not trusted
+        Live l;
+        l.fake->script.push_back(ok(R"({"WebId":"F1DSabc","Name":"SYN SERVER"})"));
+        l.fake->script.push_back(ok(R"({"Items":[{"WebId":"P1other","Name":"SYN.PV2"},{"WebId":"P1abc","Name":"SYN.PV"}]})"));
+        l.fake->script.push_back(ok(page({item("2026-01-15T08:00:00Z", "5")})));
+        Limits lim;
+        lim.pageSize = 10;
+        Plan p = buildPlan(parseSql("SELECT PointId, NumericValue FROM RecordedValues WHERE TagName = 'syn.pv' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}"), {}, lim);
+        Trace t;
+        auto src = openPlan(p, *l.b, l.c, lim, t, "test");
+        Row r;
+        CHECK(src->next(r) && std::get<std::string>(r[0]) == "P1abc" && std::get<double>(r[1]) == 5.0);
+        CHECK(!src->next(r));
+        CHECK(l.fake->urls[1].find("nameFilter=syn.pv") != std::string::npos);
+        CHECK(l.fake->urls[2].find("/streams/P1abc/recorded") != std::string::npos);
     }
     {   // Retry-After as an HTTP date: past retries now, far future refuses to wait, garbage backs off
         Live past(1);

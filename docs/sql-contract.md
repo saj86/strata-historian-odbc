@@ -29,10 +29,16 @@ Aggregates are unimplemented on purpose: averaging raw recorded rows is misleadi
 
 A read needs **all** of the following, or it is refused before any source access:
 
-- `PointId = value` or `PointId IN (...)`, up to `MaxPointsPerQuery` (default 16)
+- `PointId` or `TagName`, as `= value` or `IN (...)`, up to `MaxPointsPerQuery` (default 16)
 - A lower and an upper `EventUtc` bound, spanning at most `MaxWindowDays` (default 31)
 
 The row cap `MaxRows` (default 2,000,000) stops a query with an error. It does not truncate quietly.
+
+## PointId or TagName
+
+`TagName` is easier to read and ignores letter case. The driver looks the point up first, so it makes one extra request per tag. A tag it can't find, or one this identity can't see, returns `42S02`. If both are given, `PointId` names the point and `TagName` filters it.
+
+Use `TagName` for reports people read and edit. Use `PointId` for long-lived pipelines, because a rename changes the tag but not the `PointId`, and a query by the old tag then returns `42S02`.
 
 ## The worked example
 

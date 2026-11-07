@@ -268,6 +268,26 @@ int main(int argc, char** argv) {
         CHECK(got == golden);
     }
 
+    section("reading by tag name");
+    {
+        Stmt s(c);
+        WS q = W("SELECT EventUtc, NumericValue, StateText, IsGood FROM RecordedValues WHERE TagName = ? AND EventUtc >= ? AND EventUtc < ?");
+        CHECK(SQL_SUCCEEDED(SQLPrepareW(s.h, const_cast<SQLWCHAR*>(q.c_str()), SQL_NTS)));
+        WS tag = W("syn.pressure.pv");
+        SQLLEN tagInd = SQL_NTS, zero = 0;
+        SQL_TIMESTAMP_STRUCT a = ts(2026, 1, 15, 8, 0, 0), b = ts(2026, 1, 15, 9, 0, 0);
+        CHECK(SQL_SUCCEEDED(SQLBindParameter(s.h, 1, SQL_PARAM_INPUT, SQL_C_WCHAR, SQL_WVARCHAR, 256, 0, const_cast<SQLWCHAR*>(tag.c_str()), 0, &tagInd)));
+        CHECK(SQL_SUCCEEDED(SQLBindParameter(s.h, 2, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, 27, 7, &a, 0, &zero)));
+        CHECK(SQL_SUCCEEDED(SQLBindParameter(s.h, 3, SQL_PARAM_INPUT, SQL_C_TYPE_TIMESTAMP, SQL_TYPE_TIMESTAMP, 27, 7, &b, 0, &zero)));
+        CHECK(SQLExecute(s.h) == SQL_SUCCESS);
+        std::vector<std::string> got;
+        while (SQL_SUCCEEDED(SQLFetch(s.h))) got.push_back(s.text(1) + "," + s.text(2) + "," + s.text(3) + "," + s.text(4));
+        CHECK(got == golden);
+        Stmt u(c);
+        CHECK(u.exec("SELECT * FROM RecordedValues WHERE TagName = 'NO.SUCH.TAG' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}") == SQL_ERROR && u.err() == "42S02");
+        CHECK(u.exec("SELECT * FROM RecordedValues WHERE TagName = 'SYN.PRESSURE.PV'") == SQL_ERROR && u.err() == "42000");
+    }
+
     section("bounded reads and zero-row probes");
     {
         Stmt s(c);

@@ -25,6 +25,7 @@ struct BoundPredicate {
     int column;
     CmpOp op;
     std::vector<Value> values;
+    bool ignoreCase = false;  // TagName: PI tag names are not case-sensitive
 };
 
 struct Plan {
@@ -34,6 +35,7 @@ struct Plan {
     std::vector<ColumnDef> columns;
     std::vector<BoundPredicate> residual;  // always re-applied locally, so exclusive bounds stay exact
     std::vector<std::string> pointIds;
+    std::vector<std::string> tagNames;  // resolved to points at read time; empty when PointId was given
     Ticks start{}, end{};
     std::optional<std::string> tagName;
     std::optional<long long> limit;

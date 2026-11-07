@@ -75,12 +75,18 @@ bool matches(const BoundPredicate& p, const Row& r) {
         default: break;
     }
     if (isNull(v)) return false;
+    auto same = [&](const Value& o) {
+        if (p.ignoreCase) return iequals(std::get<std::string>(v), std::get<std::string>(o));
+        return compareValues(v, o) == 0;
+    };
     if (p.op == CmpOp::In) {
         for (auto& o : p.values)
-            if (!isNull(o) && compareValues(v, o) == 0) return true;
+            if (!isNull(o) && same(o)) return true;
         return false;
     }
     if (isNull(p.values[0])) return false;
+    if (p.ignoreCase && p.op == CmpOp::Eq) return same(p.values[0]);
+    if (p.ignoreCase && p.op == CmpOp::Ne) return !same(p.values[0]);
     int c = compareValues(v, p.values[0]);
     switch (p.op) {
         case CmpOp::Eq: return c == 0;
@@ -124,7 +130,7 @@ public:
 class RecordedBase final : public BaseSource {
 public:
     RecordedBase(const Plan& plan, Backend& b, CancelToken& c, const Limits& l, const Trace& tr, std::string corr)
-        : b_(b), c_(c), lim_(l), trace_(tr), corr_(std::move(corr)), scope_(plan.kind == PlanKind::Preview ? "PREVIEW" : "BOUNDED"), ids_(plan.pointIds), end_(plan.end), start_(plan.start) {
+        : b_(b), c_(c), lim_(l), trace_(tr), corr_(std::move(corr)), scope_(plan.kind == PlanKind::Preview ? "PREVIEW" : "BOUNDED"), ids_(plan.pointIds), tags_(plan.tagNames), end_(plan.end), start_(plan.start) {
         if (plan.kind == PlanKind::Preview) {
             // One point, one recent window, capped row count. Never a table scan.
             PointQuery pq;
@@ -144,8 +150,9 @@ public:
             page_.clear();
             i_ = 0;
             if (started_ && !cont_.empty()) { fetch(); continue; }
-            if (p_ >= ids_.size()) return false;
-            info_ = b_.getPoint(ids_[p_++], c_);
+            if (p_ < ids_.size()) info_ = b_.getPoint(ids_[p_++], c_);
+            else if (t_ < tags_.size()) info_ = resolveTag(tags_[t_++]);
+            else return false;
             started_ = true;
             cont_.clear();
             seqRaw_.clear();
@@ -155,6 +162,23 @@ public:
         }
     }
 private:
+    // Exact name, ignoring case. An upstream name filter may match more, so the result is checked here.
+    PointInfo resolveTag(const std::string& name) {
+        PointQuery q;
+        q.tagName = name;
+        q.pageSize = lim_.pageSize;
+        do {
+            auto page = b_.listPoints(q, c_);
+            for (auto& p : page.points) {
+                if (!iequals(p.tagName, name)) continue;
+                if (trace_.enabled())
+                    trace_.write(corr_, "resolveTag", "\"tagName\":" + Trace::quote(name) + ",\"point\":" + Trace::quote(p.pointId));
+                return p;
+            }
+            q.continuation = page.continuation;
+        } while (!q.continuation.empty());
+        throw Error("42S02", "Tag '" + name + "' was not found or is not visible to this identity.");
+    }
     void fetch() {
         c_.check();
         RecordedRequest r;
@@ -202,9 +226,9 @@ private:
     const Limits& lim_;
     const Trace& trace_;
     std::string corr_, scope_;
-    std::vector<std::string> ids_;
+    std::vector<std::string> ids_, tags_;
     Ticks end_, start_;
-    size_t p_ = 0;
+    size_t p_ = 0, t_ = 0;
     PointInfo info_;
     bool started_ = false;
     std::vector<RecordedEvent> page_;
@@ -360,6 +384,7 @@ Plan buildPlan(const Query& q, const std::vector<Value>& params, const Limits& l
 
     for (auto& p : q.where) {
         BoundPredicate b{t.index(p.column), p.op, {}};
+        b.ignoreCase = iequals(p.column, "TagName");
         ColType ct = t.columns[static_cast<size_t>(b.column)].type;
         for (auto& o : p.operands) {
             const Value& raw = o.isParam ? params[static_cast<size_t>(o.param)] : o.literal;
@@ -393,8 +418,20 @@ Plan buildPlan(const Query& q, const std::vector<Value>& params, const Limits& l
 
     std::optional<Ticks> lo, hi;
     bool emptyWindow = false;
-    bool havePoints = false;
+    bool havePoints = false, haveTags = false;
     for (auto& p : plan.residual) {
+        if (p.column == RC_TagName && (p.op == CmpOp::Eq || p.op == CmpOp::In)) {
+            if (haveTags) throw Error("0A000", "Unsupported SQL: only one TagName predicate is accepted.");
+            haveTags = true;
+            for (auto& v : p.values) {
+                if (isNull(v)) throw Error("HY000", "TagName bound must not be NULL.");
+                auto& s = std::get<std::string>(v);
+                bool seen = false;
+                for (auto& n : plan.tagNames) seen = seen || iequals(n, s);
+                if (!seen) plan.tagNames.push_back(s);
+            }
+            continue;
+        }
         if (p.column == RC_PointId) {
             if (p.op == CmpOp::Eq || p.op == CmpOp::In) {
                 std::vector<std::string> ids;
@@ -417,10 +454,12 @@ Plan buildPlan(const Query& q, const std::vector<Value>& params, const Limits& l
             if (p.op == CmpOp::Le || p.op == CmpOp::Lt || p.op == CmpOp::Eq) if (!hi || v < *hi) hi = v;
         }
     }
-    if (!havePoints) throw Error("42000", "RecordedValues requires PointId = value or PointId IN (...). Refusing an unbounded archive read.");
+    if (havePoints) plan.tagNames.clear();  // PointId names the points; TagName stays as a filter on them
+    if (!havePoints && !haveTags) throw Error("42000", "RecordedValues requires PointId or TagName (= value or IN (...)). Refusing an unbounded archive read.");
+    const size_t pointCount = plan.pointIds.size() + plan.tagNames.size();
     if (!lo || !hi) throw Error("42000", "RecordedValues requires both a lower and an upper EventUtc bound. Refusing an unbounded archive read.");
-    if (static_cast<int>(plan.pointIds.size()) > lim.maxPointsPerQuery)
-        throw Error("42000", "Query names " + std::to_string(plan.pointIds.size()) + " points; MaxPointsPerQuery is " + std::to_string(lim.maxPointsPerQuery) + ".");
+    if (static_cast<int>(pointCount) > lim.maxPointsPerQuery)
+        throw Error("42000", "Query names " + std::to_string(pointCount) + " points; MaxPointsPerQuery is " + std::to_string(lim.maxPointsPerQuery) + ".");
     if (emptyWindow || *hi < *lo) { plan.kind = PlanKind::Empty; return plan; }
     if (hi->v - lo->v > lim.maxWindowDays * kTicksPerDay)
         throw Error("42000", "EventUtc window exceeds MaxWindowDays=" + std::to_string(lim.maxWindowDays) + ". Split the read, for example with incremental refresh partitions.");
@@ -428,11 +467,11 @@ Plan buildPlan(const Query& q, const std::vector<Value>& params, const Limits& l
     plan.start = *lo;
     plan.end = *hi;
 
-    // Source order is PointId as given, then EventUtc, then EventSeq. Sort only when that differs.
-    bool natural = plan.pointIds.size() == 1 || plan.order.empty();
+    // Source order is the point as given, then EventUtc, then EventSeq. Sort only when that differs.
+    bool natural = pointCount == 1 || plan.order.empty();
     size_t ci = 0;
     for (auto& [col, desc] : plan.order) {
-        if (col == RC_PointId && plan.pointIds.size() == 1 && !desc) continue;
+        if ((col == RC_PointId || col == RC_TagName) && pointCount == 1 && !desc) continue;
         static const int seq[] = {RC_EventUtc, RC_EventSeq};
         if (desc || ci >= 2 || col != seq[ci]) { natural = false; break; }
         ci++;
@@ -451,6 +490,10 @@ std::string describeUpstream(const Plan& plan, const Limits& lim) {
             for (auto& id : plan.pointIds) {
                 if (!s.empty()) s += "; ";
                 s += "getPoint(" + id + ") + readRecorded(point=" + id + ", start=" + formatUtc(plan.start) + ", end=" + formatUtc(plan.end) + ", boundary=Inside, pageSize=" + std::to_string(lim.pageSize) + ")";
+            }
+            for (auto& tag : plan.tagNames) {
+                if (!s.empty()) s += "; ";
+                s += "resolveTag(" + tag + ") + readRecorded(point=<resolved>, start=" + formatUtc(plan.start) + ", end=" + formatUtc(plan.end) + ", boundary=Inside, pageSize=" + std::to_string(lim.pageSize) + ")";
             }
             return s;
         }
