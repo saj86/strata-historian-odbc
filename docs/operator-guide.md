@@ -14,7 +14,7 @@ ctest --preset windows-x64-release
 wix build installer\strataodbc.wxs -arch x64 -d ProductVersion=0.1.0 -d "DriverPath=build\windows-x64\Release\strataodbc.dll" -o build\strataodbc-0.1.0-x64.msi
 ```
 
-The static CRT in `CMakeLists.txt` means no VC++ redistributable. Or run `scripts\Build-And-Test.ps1`, or the provided `.github/workflows/windows-build.yml` (also never yet executed).
+The static CRT in `CMakeLists.txt` means no VC++ redistributable. Or run `scripts\Build-And-Test.ps1`. GitHub Actions is turned off for this repository, so `.github/workflows/windows-build.yml` doesn't run; build on a Windows machine instead.
 
 **Sign** the DLL before the MSI build and the MSI after, with the organization's certificate, then verify:
 

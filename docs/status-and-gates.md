@@ -37,7 +37,7 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | PowerShell scripts parse | PowerShell 7.6 on macOS | Passed | 0 parse errors. **Syntax only** |
 | JSON artifacts parse | Python | Passed | |
 | MSI build | macOS | **Failed** | WiX supports only Windows; treat MSI as unverified |
-| MSVC build, `ctest` on Windows | | Not run | |
+| `ctest` on Windows | | Not run | |
 | Driver DLL loaded by the Windows driver manager | | Not run | |
 | WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only. `Test-Package.ps1` now runs WinHTTP against the mock on Windows |
 | Excel over ODBC | | Not run | |
@@ -46,7 +46,7 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | Power BI project opened in Desktop, DAX measures, M queries, page layout | | Not run | No schema or parser here evaluates these |
 | PySpark notebooks, `curated_tables.sql` | | Not run | No Java on this host. Syntax parsed only |
 | Samples and test package on Windows | | Not run | |
-| GitHub Actions workflow | | Not run | |
+| MSVC build | GitHub Actions, windows-2022 | **Not finished** | Found 3 problems that the cross-compile can't catch, all fixed: `min`/`max` macros, `small` as a variable name, and a missing link library. Everything compiled, but the last link fix wasn't confirmed because Actions was turned off during that run. No Windows test has run. Actions stays off at the owner's request |
 | Any PI server | | Not run | |
 
 ## Known limitations
