@@ -1,6 +1,7 @@
 Strata Historian ODBC Driver: complete package
 
 WHAT THIS IS
+Version: see VERSION.txt and CHANGELOG.md.
 Everything for the driver in one folder: Windows x64 binaries, documents, examples, install scripts,
 Power BI queries, Fabric files and the full source. VERSION.txt names the exact commit.
 
@@ -10,7 +11,10 @@ This is an UNSIGNED TEST BUILD. Use it on a test machine, not on a gateway or pr
   - Never yet run on Windows or in Power BI.
   - Never yet connected to a real PI server.
   - PI licensing: check docs\backend-decision.md before using real data.
-The Windows DLL here is cross-compiled. There is no MSI in this package: it must be built on Windows.
+The Windows DLL here is cross-compiled. There is no MSI in this package. To make one with the setup wizard,
+run this on Windows with the .NET SDK installed (Visual Studio isn't needed):
+       powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1
+It writes dist\strataodbc-<version>-x64.msi, unsigned and for testing only.
 
 QUICK TEST ON WINDOWS (64-bit Windows 10 or 11, nothing else needed)
   1. Unzip, then rename the folder to C:\strata-test
