@@ -31,7 +31,7 @@ Prerequisites: Visual Studio 2022 Build Tools with "Desktop development with C++
 CMake 3.21+, and `dotnet tool install --global wix --version 5.0.2`. From an **elevated** 64-bit PowerShell:
 
 ```powershell
-.\scripts\Build-And-Test.ps1 -Version 0.1.0
+.\scripts\Build-And-Test.ps1
 ```
 
 This builds the DLL and tests, builds the MSI, installs it, creates the fixture DSNs and runs the native
@@ -73,3 +73,4 @@ On macOS or Linux, `make install` installs the driver and fixture DSNs under `~/
 | Security and identity | [security.md](docs/security.md) |
 | Fabric design | [fabric-design.md](docs/fabric-design.md) |
 | Dependencies | [dependency-inventory.md](docs/dependency-inventory.md) |
+| What changed in each version | [CHANGELOG.md](CHANGELOG.md) |

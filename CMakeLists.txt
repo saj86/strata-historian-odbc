@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.21)
-project(StrataHistorianOdbc VERSION 0.1.0 LANGUAGES CXX)
+# The version lives in src/odbc/version.h only.
+file(STRINGS src/odbc/version.h _strata_version REGEX "STRATA_VERSION_(MAJOR|MINOR|PATCH) ")
+string(REGEX REPLACE ".*MAJOR ([0-9]+).*MINOR ([0-9]+).*PATCH ([0-9]+).*" "\\1.\\2.\\3" STRATA_VERSION "${_strata_version}")
+project(StrataHistorianOdbc VERSION ${STRATA_VERSION} LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

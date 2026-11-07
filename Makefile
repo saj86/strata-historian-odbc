@@ -8,7 +8,7 @@
 #   make check-pbip   check the Power BI project without Power BI Desktop
 # This is not the Windows release path: use scripts/Build-And-Test.ps1 on Windows for the MSI.
 
-VERSION   ?= 0.1.0
+VERSION   := $(shell awk '/STRATA_VERSION_MAJOR/{a=$$3} /STRATA_VERSION_MINOR/{b=$$3} /STRATA_VERSION_PATCH/{c=$$3} END{print a"."b"."c}' src/odbc/version.h)
 PREFIX    ?= $(HOME)/.local/strata-odbc
 ROOT      := $(CURDIR)
 TOOLS     := $(ROOT)/build/tools
@@ -23,8 +23,7 @@ UO_VER    := 2.3.14
 UO_SHA    := 4e2814de3e01fc30b0b9f75e83bb5aba91ab0384ee951286504bb70205524771
 UO_URL    := https://www.unixodbc.org/unixODBC-2.3.14.tar.gz
 PKG       := strata-odbc-$(VERSION)-win-x64-UNSIGNED-TEST
-COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null)
-FULL      := strata-odbc-$(VERSION)-complete-UNSIGNED-$(COMMIT)
+FULL      := strata-odbc-$(VERSION)-complete-UNSIGNED
 export PATH := $(VENV)/bin:$(ODBC)/bin:$(PATH)
 
 .PHONY: all tools build test install uninstall query package-windows package check-pbip clean
@@ -87,17 +86,18 @@ package-windows: $(VENV)/.done
 	cd dist && rm -f $(PKG).zip && zip -qr $(PKG).zip $(PKG)
 	@ls -l dist/$(PKG).zip
 
-# One zip with the Windows binaries, documents, examples and source, built from a commit.
-# The folder and zip are named after that commit, so each commit has its own package.
+# One zip with the Windows binaries, documents, examples and source, built from a commit and named by version.
+# It is staged in a new temporary folder each time, so nothing old is carried over and nothing needs deleting.
 package: package-windows
 	@git diff --quiet HEAD -- || (echo "Commit your changes first: the package is built from HEAD." && exit 1)
-	mkdir -p dist/$(FULL)/bin
-	git archive HEAD | tar -x -C dist/$(FULL)
-	cp build/cross-windows/strataodbc.dll build/cross-windows/core_tests.exe build/cross-windows/odbc_smoke.exe dist/$(FULL)/bin/
-	cp packaging/START-HERE.txt dist/$(FULL)/START-HERE.txt
-	printf 'version $(VERSION)\ncommit $(COMMIT)\n' > dist/$(FULL)/VERSION.txt
-	cd dist/$(FULL) && shasum -a 256 bin/* > SHA256SUMS.txt
-	cd dist && zip -qr -FS $(FULL).zip $(FULL) && shasum -a 256 $(FULL).zip > $(FULL).zip.sha256
+	@set -e; stage=$$(mktemp -d); dest="$$stage/$(FULL)"; mkdir -p "$$dest/bin"; \
+	git archive HEAD | tar -x -C "$$dest"; \
+	cp build/cross-windows/strataodbc.dll build/cross-windows/core_tests.exe build/cross-windows/odbc_smoke.exe "$$dest/bin/"; \
+	cp packaging/START-HERE.txt "$$dest/START-HERE.txt"; \
+	printf 'Strata Historian ODBC Driver $(VERSION)\n' > "$$dest/VERSION.txt"; \
+	(cd "$$dest" && shasum -a 256 bin/* > SHA256SUMS.txt); \
+	mkdir -p dist; (cd "$$stage" && zip -qr -FS "$(ROOT)/dist/$(FULL).zip" "$(FULL)"); \
+	(cd dist && shasum -a 256 "$(FULL).zip" > "$(FULL).zip.sha256")
 	@ls -l dist/$(FULL).zip
 
 # Checks the Power BI project without Power BI Desktop: consistency, Microsoft's JSON schemas, Microsoft's TMDL

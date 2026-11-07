@@ -134,7 +134,7 @@ class Project(unittest.TestCase):
     def test_project_paths_fit_the_windows_limit(self):
         for path in PROJECT.rglob("*"):
             relative = str(path.relative_to(ROOT))
-            self.assertLess(len(r"C:\strata-odbc-0.1.0-complete-UNSIGNED-0000000" + "\\" + relative), 260, relative)
+            self.assertLess(len(r"C:\strata-odbc-0.2.0-complete-UNSIGNED" + "\\" + relative), 260, relative)
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
 
 ```powershell
 Get-Package | Where-Object Name -match 'PI |OSIsoft|AVEVA'     # expect nothing relevant
-.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.1.0-x64.msi -AllowUnsigned   # lab only
+.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.2.0-x64.msi -AllowUnsigned   # lab only
 .\scripts\Provision-StrataDsn.ps1 -Name StrataFixture -Backend fixture
 .\scripts\Provision-StrataDsn.ps1 -Name StrataFixturePreview -Backend fixture -NavigatorPreview
 .\scripts\Test-StrataNode.ps1 -Dsn StrataFixture -ExpectedRows 7 -SmokeSql "SELECT EventUtc FROM RecordedValues WHERE PointId = 'PT-PRESSURE-001' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}"

@@ -11,7 +11,7 @@ git clean -xfd                                                       # clean bui
 cmake --preset windows-x64-release
 cmake --build --preset windows-x64-release
 ctest --preset windows-x64-release
-wix build installer\strataodbc.wxs -arch x64 -d ProductVersion=0.1.0 -d "DriverPath=build\windows-x64\Release\strataodbc.dll" -o build\strataodbc-0.1.0-x64.msi
+.\scripts\Build-Installer.ps1 -DllPath build\windows-x64\Release\strataodbc.dll
 ```
 
 The static CRT in `CMakeLists.txt` means no VC++ redistributable. Or run `scripts\Build-And-Test.ps1`. GitHub Actions is turned off for this repository, so `.github/workflows/windows-build.yml` doesn't run; build on a Windows machine instead.
@@ -21,11 +21,11 @@ The static CRT in `CMakeLists.txt` means no VC++ redistributable. Or run `script
 ```powershell
 signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> build\windows-x64\Release\strataodbc.dll
 # ...build the MSI...
-signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> build\strataodbc-0.1.0-x64.msi
-Get-AuthenticodeSignature build\strataodbc-0.1.0-x64.msi
+signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> dist\strataodbc-0.2.0-x64.msi
+Get-AuthenticodeSignature dist\strataodbc-0.2.0-x64.msi
 ```
 
-Bump `ProductVersion` for every release: `MajorUpgrade` keys on it. Keep each released signed MSI for rollback. Change `src/odbc/version.h` and `project(VERSION)` in `CMakeLists.txt` together: the DLL's file version and `SQL_DRIVER_VER` come from that header.
+For every release, raise the version in `src/odbc/version.h` and add an entry to `CHANGELOG.md`. Everything else reads the version from that header: CMake, the DLL's file version, `SQL_DRIVER_VER`, the Makefile, the MSI and the file names. `MajorUpgrade` keys on it, so keep each released signed MSI for rollback.
 
 ## Build the installer
 

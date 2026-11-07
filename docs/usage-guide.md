@@ -57,7 +57,7 @@ Fill in **User name** and **Password** only to try **Test**: they're used once a
 **Gateway or production host: use the signed MSI.** Build it with your organization's certificate, then install it silently and create the DSN with a script:
 
 ```powershell
-.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.1.0-x64.msi -ExpectedThumbprint <thumbprint>
+.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.2.0-x64.msi -ExpectedThumbprint <thumbprint>
 .\scripts\Provision-StrataDsn.ps1 -Name StrataPI -Backend piwebapi -BaseUrl https://piweb.example.local/piwebapi -DataServer <data server name> -Auth Basic
 ```
 
