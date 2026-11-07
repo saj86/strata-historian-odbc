@@ -1,0 +1,15 @@
+build/
+out/
+*.user
+__pycache__/
+*.pyc
+# Never commit captures, secrets or vendor binaries (docs/lab-protocol.md)
+captures/
+*.pcap
+*.pcapng
+*.pfx
+*.snk
+vendor/
+dist/
+samples/csharp/**/bin/
+samples/csharp/**/obj/

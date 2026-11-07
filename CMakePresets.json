@@ -1,0 +1,28 @@
+{
+  "version": 3,
+  "configurePresets": [
+    {
+      "name": "windows-x64-release",
+      "displayName": "Windows x64 Release (Visual Studio 2022)",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/windows-x64",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" }
+    },
+    {
+      "name": "dev-unixodbc",
+      "displayName": "Portable contract tests against a local unixODBC (not a release target)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "ODBC_PREFIX": "$env{ODBC_PREFIX}" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "windows-x64-release", "configurePreset": "windows-x64-release", "configuration": "Release" },
+    { "name": "dev-unixodbc", "configurePreset": "dev-unixodbc" }
+  ],
+  "testPresets": [
+    { "name": "windows-x64-release", "configurePreset": "windows-x64-release", "configuration": "Release", "output": { "outputOnFailure": true } },
+    { "name": "dev-unixodbc", "configurePreset": "dev-unixodbc", "output": { "outputOnFailure": true } }
+  ]
+}
