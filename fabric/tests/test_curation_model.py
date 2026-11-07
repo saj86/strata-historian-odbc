@@ -7,7 +7,7 @@ import unittest
 from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "notebooks"))
-from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, event_checksum, raw_matches_timestamp, run_window  # noqa: E402
+from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, event_checksum, raw_matches_timestamp, run_window, validate_window_params  # noqa: E402
 
 ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
 NOTEBOOKS = os.path.join(ROOT, "fabric", "notebooks")
@@ -207,6 +207,38 @@ class ChecksumAndPrecision(unittest.TestCase):
         notebook = os.path.join(NOTEBOOKS, "curate_recorded_events.py")
         for name in ("event_checksum", "raw_matches_timestamp"):
             self.assertEqual(function_source(model, name), function_source(notebook, name))
+
+
+class WindowParameters(unittest.TestCase):
+    KNOWN = {P, "it's"}
+
+    def good(self, **k):
+        args = {"point_id": P, "start": "2026-01-15T08:00:00Z", "end": "2026-01-15T09:00:00Z", "known_points": self.KNOWN, "max_days": 31}
+        args.update(k)
+        return validate_window_params(**args)
+
+    def test_returns_canonical_literals(self):
+        self.assertEqual(self.good(), {"point_id": P, "start_literal": "2026-01-15 08:00:00", "end_literal": "2026-01-15 09:00:00"})
+
+    def test_quote_in_a_known_point_is_escaped(self):
+        self.assertEqual(self.good(point_id="it's")["point_id"], "it''s")
+
+    def test_rejects_unsafe_or_invalid_input(self):
+        for bad in (
+            {"point_id": "x' OR '1'='1"},
+            {"start": "2026-01-15T08:00:00Z' OR 1=1"},
+            {"start": "2026-01-15 08:00:00"},
+            {"end": "2026-02-30T00:00:00Z"},
+            {"end": "2026-01-15T08:00:00Z"},
+            {"end": "2026-01-15T07:00:00Z"},
+            {"end": "2026-03-15T08:00:00Z"},
+        ):
+            with self.subTest(bad), self.assertRaises(ValueError):
+                self.good(**bad)
+
+    def test_notebook_copy_matches_the_model(self):
+        self.assertEqual(function_source(os.path.join(NOTEBOOKS, "curation_model.py"), "validate_window_params"),
+                         function_source(os.path.join(NOTEBOOKS, "validate_window.py"), "validate_window_params"))
 
 
 if __name__ == "__main__":

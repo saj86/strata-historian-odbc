@@ -9,11 +9,11 @@
     "Attempt": "int, starting at 1. The caller raises it for each rerun of a window"
   },
   "activities": [
-    {"name": "nb_validate_window", "type": "Notebook", "purpose": "Parse both bounds as UTC, require end > start and within MaxWindowDays, look the point up in the control table, and return canonical literals. Fails the pipeline on anything else."},
+    {"name": "nb_validate_window", "type": "Notebook", "notebook": "fabric/notebooks/validate_window.py", "purpose": "Parse both bounds as UTC, require end > start and within MaxWindowDays, look the point up in the control table, and return canonical literals. Fails the pipeline on anything else."},
     {"name": "copy_window_to_staging", "type": "Copy", "dependsOn": ["nb_validate_window"],
      "source": {"connection": "ODBC via on-premises gateway (Basic or Anonymous per the connector matrix)",
                 "useQuery": "Query", "queryTimeout": "00:30:00",
-                "query": "@concat('SELECT * FROM RecordedValues WHERE PointId = ''', activity('nb_validate_window').output.result.exitValue.point_id, ''' AND EventUtc >= {ts ''', activity('nb_validate_window').output.result.exitValue.start_literal, '''} AND EventUtc < {ts ''', activity('nb_validate_window').output.result.exitValue.end_literal, '''}')"},
+                "query": "@concat('SELECT * FROM RecordedValues WHERE PointId = ''', json(activity('nb_validate_window').output.result.exitValue).point_id, ''' AND EventUtc >= {ts ''', json(activity('nb_validate_window').output.result.exitValue).start_literal, '''} AND EventUtc < {ts ''', json(activity('nb_validate_window').output.result.exitValue).end_literal, '''}')"},
      "sink": {"type": "Lakehouse files", "format": "Parquet", "path": "@concat('staging/recorded_events/source=', pipeline().parameters.SourceServer, '/point=', pipeline().parameters.PointBatchId, '/window=', replace(pipeline().parameters.WindowStartUtc, ':', ''), '/run=', pipeline().RunId, '/attempt=', string(pipeline().parameters.Attempt), '/')"},
      "mapping": "Explicit, from fabric/schemas/staging_recorded_events.json. Do not auto-map.",
      "retry": 0, "parallelCopies": 1},

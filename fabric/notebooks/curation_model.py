@@ -4,6 +4,8 @@ The PySpark notebook applies the same rules to Delta. tests/test_curation_model.
 crash recovery, out-of-order completion, amendment, deletion and incomplete-read behavior here.
 """
 import hashlib
+import re
+from datetime import datetime
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -33,6 +35,27 @@ def raw_matches_timestamp(raw, ts):
     if whole.replace("T", " ") != ts.strftime("%Y-%m-%d %H:%M:%S"):
         return False
     return (fraction + "000000")[:6] == f"{ts.microsecond:06d}"
+
+
+# validate_window.py carries an exact copy of this function.
+def validate_window_params(point_id, start, end, known_points, max_days):
+    """Returns the only values allowed into the Copy query text, or raises ValueError."""
+    if point_id not in known_points:
+        raise ValueError("point is not in the control table")
+    pattern = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z"
+    if not re.fullmatch(pattern, start) or not re.fullmatch(pattern, end):
+        raise ValueError("bounds must look like 2026-01-15T08:00:00Z")
+    first = datetime.strptime(start, "%Y-%m-%dT%H:%M:%SZ")
+    last = datetime.strptime(end, "%Y-%m-%dT%H:%M:%SZ")
+    if last <= first:
+        raise ValueError("window end must be after its start")
+    if (last - first).total_seconds() > max_days * 86400:
+        raise ValueError(f"window is longer than {max_days} days")
+    return {
+        "point_id": point_id.replace("'", "''"),
+        "start_literal": first.strftime("%Y-%m-%d %H:%M:%S"),
+        "end_literal": last.strftime("%Y-%m-%d %H:%M:%S"),
+    }
 
 
 @dataclass(frozen=True)
