@@ -60,6 +60,7 @@ On macOS or Linux, `make install` installs the driver and fixture DSNs under `~/
 
 | Topic | Document |
 |---|---|
+| How to install and use it, with examples | [usage-guide.md](docs/usage-guide.md) |
 | Gates, test results, open questions | [status-and-gates.md](docs/status-and-gates.md) |
 | Recommended backend, evidence, costs to verify | [backend-decision.md](docs/backend-decision.md) |
 | SQL subset, prepared-query example, Navigator preview | [sql-contract.md](docs/sql-contract.md) |
