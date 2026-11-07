@@ -1,10 +1,43 @@
 """Run: python3 -m unittest discover -s fabric/tests. Uses synthetic inputs only."""
+import ast
+import json
 import os
 import sys
 import unittest
+from datetime import datetime
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "notebooks"))
-from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, run_window  # noqa: E402
+from curation_model import Event, Extract, Store, ValidationError, advance_watermark, commit_window, event_checksum, raw_matches_timestamp, run_window  # noqa: E402
+
+ROOT = os.path.join(os.path.dirname(__file__), "..", "..")
+NOTEBOOKS = os.path.join(ROOT, "fabric", "notebooks")
+
+
+def function_source(path, name):
+    """The source of one function, without importing the file (notebooks need Spark to import)."""
+    with open(path, encoding="utf-8") as f:
+        text = f.read()
+    for node in ast.parse(text).body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            return ast.get_source_segment(text, node)
+    raise AssertionError(f"{name} not found in {path}")
+
+
+def fixture_rows():
+    """The hand-written golden file, as checksum inputs."""
+    rows, seen = [], {}
+    with open(os.path.join(ROOT, "fixtures", "expected_pressure_window.csv"), encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line or line.startswith("#") or line.startswith("EventUtc,"):
+                continue
+            when, number, state, good = line.split(",")
+            raw = when.replace(" ", "T") + "Z"
+            seq = seen.get(raw, 0)
+            seen[raw] = seq + 1
+            value = None if number == "<NULL>" else float(number)
+            rows.append((raw, seq, "NUMERIC" if value is not None else "SYSTEM", value, None if state == "<NULL>" else state, good == "1"))
+    return rows
 
 W1 = ("2026-01-15T08:00:00.0000000Z", "2026-01-15T09:00:00.0000000Z")
 W2 = ("2026-01-15T09:00:00.0000000Z", "2026-01-15T10:00:00.0000000Z")
@@ -134,6 +167,46 @@ class Corrections(unittest.TestCase):
         late = FIRST[:1] + [ev("08:00:05.0000000", v=50.0)] + FIRST[1:]
         run_window(s, extract(events=late, run="overlap"), [W1])
         self.assertEqual(len(s.rows()), 6)
+
+
+class ChecksumAndPrecision(unittest.TestCase):
+    def test_checksum_ignores_order_and_detects_changes(self):
+        rows = fixture_rows()
+        base = event_checksum(rows)
+        self.assertEqual(base, event_checksum(list(reversed(rows))))
+        changed = [rows[0][:3] + (999.0,) + rows[0][4:]] + rows[1:]
+        self.assertNotEqual(base, event_checksum(changed))
+        self.assertNotEqual(base, event_checksum(rows[1:]))
+
+    def test_checksum_keeps_zero_and_null_apart(self):
+        zero = event_checksum([("t", 0, "NUMERIC", 0.0, None, True)])
+        null = event_checksum([("t", 0, "NUMERIC", None, None, True)])
+        self.assertNotEqual(zero, null)
+
+    def test_sample_control_record_holds_the_fixture_checksum(self):
+        with open(os.path.join(ROOT, "fabric", "schemas", "sample_control_records.json"), encoding="utf-8") as f:
+            sample = json.load(f)[0]
+        rows = fixture_rows()
+        self.assertEqual(sample["checksum"], event_checksum(rows))
+        self.assertEqual(sample["observed_count"], len(rows))
+
+    def test_validate_rejects_a_wrong_checksum(self):
+        with self.assertRaises(ValidationError):
+            commit_window(Store(), Extract(P, W1, "r1", 1, FIRST, True, None, "sha256:wrong"))
+
+    def test_precision_compare(self):
+        ts = datetime(2026, 1, 15, 8, 0, 10, 15)  # 15 microseconds
+        self.assertTrue(raw_matches_timestamp("2026-01-15T08:00:10.0000153Z", ts))  # the 100 ns digit is beyond Spark
+        self.assertTrue(raw_matches_timestamp("2026-01-15 08:00:10.000015", ts))
+        self.assertFalse(raw_matches_timestamp("2026-01-15T08:00:10.0000153Z", ts.replace(microsecond=0)))  # rounded away
+        self.assertFalse(raw_matches_timestamp("2026-01-15T08:00:11.0000153Z", ts))
+        self.assertTrue(raw_matches_timestamp("2026-01-15T08:00:10Z", ts.replace(microsecond=0)))
+
+    def test_notebook_copies_match_the_model(self):
+        model = os.path.join(NOTEBOOKS, "curation_model.py")
+        notebook = os.path.join(NOTEBOOKS, "curate_recorded_events.py")
+        for name in ("event_checksum", "raw_matches_timestamp"):
+            self.assertEqual(function_source(model, name), function_source(notebook, name))
 
 
 if __name__ == "__main__":

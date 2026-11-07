@@ -1,9 +1,36 @@
 # Fabric notebook (PySpark). Status: Not run: no Spark or Delta environment was available.
 # Plain-Python rules and their tests: curation_model.py, ../tests/test_curation_model.py.
 # Parameters are set by pipeline pl_strata_recorded_ingest.
+import hashlib
+
 from pyspark.sql import SparkSession, functions as F
 
 spark = SparkSession.builder.getOrCreate()
+spark.conf.set("spark.sql.session.timeZone", "UTC")  # so collected timestamps are UTC
+
+
+def event_checksum(rows):
+    """rows: (EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, IsGood). Order does not matter."""
+    def field_text(value):
+        if value is None:
+            return "\\N"
+        if isinstance(value, bool):
+            return "1" if value else "0"
+        if isinstance(value, float):
+            return repr(value)
+        return str(value)
+    lines = sorted("\x1f".join(field_text(v) for v in row) for row in rows)
+    return "sha256:" + hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+def raw_matches_timestamp(raw, ts):
+    """True if the typed timestamp agrees with the raw text to microseconds, Spark's finest unit."""
+    text = raw.rstrip("Zz")
+    whole, _, fraction = text.partition(".")
+    if whole.replace("T", " ") != ts.strftime("%Y-%m-%d %H:%M:%S"):
+        return False
+    return (fraction + "000000")[:6] == f"{ts.microsecond:06d}"
+
 
 # --- parameters cell ---
 source_server = "FIXTURE-V1"
@@ -13,6 +40,7 @@ window_end = "2026-01-15T09:00:00Z"
 run_id = "run-0001"
 attempt = 1
 expected_count = 7          # None when no independent count exists
+expected_checksum = None    # Set for a bounded fixture. fabric/schemas/sample_control_records.json has the fixture value.
 staging_path = "Files/staging/recorded_events"
 curated_table = "curated_recorded_events"
 control_table = "control_extraction"
@@ -48,6 +76,14 @@ if checks["preview_rows"] or checks["outside"] or checks["wrong_source"] or chec
     raise ValueError(f"Batch rejected: {checks.asDict()} duplicates={dupes}")
 if expected_count is not None and checks["rows"] != expected_count:
     raise ValueError(f"Row count {checks['rows']} != expected {expected_count}")
+# Windows are bounded, so collecting one to the driver is acceptable here.
+rows = df.select("EventUtcRaw", "EventSeq", "ValueKind", "NumericValue", "StateText", "IsGood", "EventUtc").collect()
+imprecise = [r["EventUtcRaw"] for r in rows if not raw_matches_timestamp(r["EventUtcRaw"], r["EventUtc"])]
+if imprecise:
+    raise ValueError(f"Timestamp precision lost in {len(imprecise)} rows, for example {imprecise[0]}")
+checksum = event_checksum(tuple(r)[:6] for r in rows)
+if expected_checksum is not None and checksum != expected_checksum:
+    raise ValueError(f"Checksum {checksum} != expected {expected_checksum}")
 # A production source must never receive fixture rows.
 if source_server != "FIXTURE-V1" and checks["fixture_rows"]:
     raise ValueError("Fixture rows found in a production batch")

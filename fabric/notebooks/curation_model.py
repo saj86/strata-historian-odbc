@@ -3,10 +3,36 @@
 The PySpark notebook applies the same rules to Delta. tests/test_curation_model.py proves replay,
 crash recovery, out-of-order completion, amendment, deletion and incomplete-read behavior here.
 """
+import hashlib
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set, Tuple
 
 Window = Tuple[str, str]  # (start inclusive, end exclusive) in canonical UTC text; sorts chronologically
+
+
+# The notebook carries an exact copy of these two functions so it needs no packaged module.
+# test_notebook_copies_match_the_model fails if the copies drift.
+def event_checksum(rows):
+    """rows: (EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, IsGood). Order does not matter."""
+    def field_text(value):
+        if value is None:
+            return "\\N"
+        if isinstance(value, bool):
+            return "1" if value else "0"
+        if isinstance(value, float):
+            return repr(value)
+        return str(value)
+    lines = sorted("\x1f".join(field_text(v) for v in row) for row in rows)
+    return "sha256:" + hashlib.sha256("\n".join(lines).encode("utf-8")).hexdigest()
+
+
+def raw_matches_timestamp(raw, ts):
+    """True if the typed timestamp agrees with the raw text to microseconds, Spark's finest unit."""
+    text = raw.rstrip("Zz")
+    whole, _, fraction = text.partition(".")
+    if whole.replace("T", " ") != ts.strftime("%Y-%m-%d %H:%M:%S"):
+        return False
+    return (fraction + "000000")[:6] == f"{ts.microsecond:06d}"
 
 
 @dataclass(frozen=True)
@@ -30,6 +56,7 @@ class Extract:
     events: List[Event]
     complete: bool  # False for a failed, denied or partial read
     expected_count: Optional[int] = None
+    expected_checksum: Optional[str] = None
 
 
 @dataclass
@@ -52,6 +79,10 @@ def validate(x: Extract) -> None:
         raise ValidationError("incomplete read: nothing may be inferred from it")
     if x.expected_count is not None and x.expected_count != len(x.events):
         raise ValidationError(f"count mismatch: expected {x.expected_count}, got {len(x.events)}")
+    if x.expected_checksum is not None:
+        actual = event_checksum((e.event_utc_raw, e.event_seq, e.value_kind, e.numeric_value, None, e.is_good) for e in x.events)
+        if actual != x.expected_checksum:
+            raise ValidationError(f"checksum mismatch: expected {x.expected_checksum}, got {actual}")
     start, end = x.window
     for e in x.events:
         if e.point_id != x.point_id:
