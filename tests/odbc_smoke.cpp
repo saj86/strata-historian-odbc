@@ -334,19 +334,19 @@ int main(int argc, char** argv) {
     {
         Stmt s(c);
         CHECK(SQL_SUCCEEDED(s.exec("SELECT Descriptor, TagName, IsStep FROM Points WHERE TagName = 'SYN.PRESSURE.PV'")));
-        SQLWCHAR small[5];
+        SQLWCHAR piece[5];
         SQLLEN ind = 0;
         CHECK(SQL_SUCCEEDED(SQLFetch(s.h)));
         std::u16string whole;
-        SQLRETURN r = SQLGetData(s.h, 1, SQL_C_WCHAR, small, sizeof small, &ind);
+        SQLRETURN r = SQLGetData(s.h, 1, SQL_C_WCHAR, piece, sizeof piece, &ind);
         CHECK(r == SQL_SUCCESS_WITH_INFO && s.err() == "01004" && ind > 0);
         SQLLEN firstTotal = ind;
         while (r == SQL_SUCCESS_WITH_INFO || r == SQL_SUCCESS) {
-            for (int i = 0; small[i]; i++) whole.push_back(static_cast<char16_t>(small[i]));
+            for (int i = 0; piece[i]; i++) whole.push_back(static_cast<char16_t>(piece[i]));
             if (r == SQL_SUCCESS) break;
-            r = SQLGetData(s.h, 1, SQL_C_WCHAR, small, sizeof small, &ind);
+            r = SQLGetData(s.h, 1, SQL_C_WCHAR, piece, sizeof piece, &ind);
         }
-        CHECK(SQLGetData(s.h, 1, SQL_C_WCHAR, small, sizeof small, &ind) == SQL_NO_DATA);
+        CHECK(SQLGetData(s.h, 1, SQL_C_WCHAR, piece, sizeof piece, &ind) == SQL_NO_DATA);
         CHECK(whole == u"Synthetic pressure \u2013 \u0394P pr\u00fcfstand");
         CHECK(static_cast<size_t>(firstTotal) == whole.size() * sizeof(SQLWCHAR));
         // Same column read as UTF-8 in SQL_C_CHAR.

@@ -7,6 +7,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
+if(WIN32)
+  add_compile_definitions(NOMINMAX)  # windows.h otherwise defines min and max as macros
+endif()
+
 add_library(strata_core STATIC
   src/core/timeutil.cpp src/core/json.cpp src/core/catalog.cpp src/core/sql.cpp src/core/planner.cpp
   src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp src/backend/loopback_transport.cpp

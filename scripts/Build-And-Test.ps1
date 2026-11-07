@@ -40,4 +40,7 @@ $trace = Join-Path $env:TEMP 'strata-smoke-trace.jsonl'
 Remove-Item $trace -ErrorAction SilentlyContinue
 & (Join-Path $bin 'odbc_smoke.exe') StrataFixture StrataFixturePreview 'DRIVER={Strata Historian ODBC Driver};' (Join-Path $root 'fixtures\expected_pressure_window.csv') $trace
 if ($LASTEXITCODE) { throw 'odbc_smoke failed' }
-Write-Host 'Build, unit tests and ODBC smoke test passed.'
+
+& "$PSScriptRoot\Test-DriverWithMock.ps1"
+if ($LASTEXITCODE) { throw 'Test-DriverWithMock failed' }
+Write-Host 'Build, unit tests, ODBC smoke test and mock PI Web API test passed.'

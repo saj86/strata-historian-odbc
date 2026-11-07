@@ -1,5 +1,4 @@
-# Runs the MSVC build, unit tests, MSI build, install and ODBC smoke test on a real Windows runner.
-# This workflow has not been executed yet.
+# Runs the MSVC build, unit tests, MSI build, install, ODBC smoke test and the mock PI Web API test on a Windows runner.
 name: windows-build
 on: [push, pull_request, workflow_dispatch]
 jobs:
