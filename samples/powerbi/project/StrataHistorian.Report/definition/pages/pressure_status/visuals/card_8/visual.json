@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "card_8",
+  "position": {
+    "x": 1116,
+    "y": 10,
+    "z": 7000,
+    "height": 90,
+    "width": 150,
+    "tabOrder": 7000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "PressureEvents"
+                    }
+                  },
+                  "Property": "Preview Rows In Model"
+                }
+              },
+              "queryRef": "PressureEvents.Preview Rows In Model",
+              "nativeQueryRef": "Preview Rows In Model"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

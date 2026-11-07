@@ -1,0 +1,18 @@
+table RefreshStamp
+
+	column RefreshedUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn:ss
+		summarizeBy: none
+		sourceColumn: RefreshedUtc
+
+		annotation SummarizationSetBy = User
+
+	partition RefreshStamp = m
+		mode: import
+		source =
+				let
+				    Source = #table(type table [RefreshedUtc = datetime], {{DateTimeZone.RemoveZone(DateTimeZone.UtcNow())}})
+				in
+				    Source
+

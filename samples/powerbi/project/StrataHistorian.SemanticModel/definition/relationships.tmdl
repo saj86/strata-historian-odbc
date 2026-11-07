@@ -1,0 +1,7 @@
+relationship 3f0a6d52-7c1e-4a5b-9d10-1b2c3d4e5f60
+	fromColumn: PressureEvents.PointId
+	toColumn: Points.PointId
+
+relationship 8b1c7e63-2d4f-4b6a-8e21-6a7b8c9d0e1f
+	fromColumn: RunEvents.PointId
+	toColumn: Points.PointId

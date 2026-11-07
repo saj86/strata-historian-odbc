@@ -1,0 +1,137 @@
+table RunEvents
+
+	column PointId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: PointId
+
+		annotation SummarizationSetBy = User
+
+	column TagName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: TagName
+
+		annotation SummarizationSetBy = User
+
+	column EventUtc
+		dataType: dateTime
+		formatString: yyyy-mm-dd hh:nn:ss.000
+		summarizeBy: none
+		sourceColumn: EventUtc
+
+		annotation SummarizationSetBy = User
+
+	column EventUtcRaw
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EventUtcRaw
+
+		annotation SummarizationSetBy = User
+
+	column EventSeq
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: EventSeq
+
+		annotation SummarizationSetBy = User
+
+	column ValueKind
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ValueKind
+
+		annotation SummarizationSetBy = User
+
+	column NumericValue
+		dataType: double
+		summarizeBy: none
+		sourceColumn: NumericValue
+
+		annotation SummarizationSetBy = User
+
+	column TextValue
+		dataType: string
+		summarizeBy: none
+		sourceColumn: TextValue
+
+		annotation SummarizationSetBy = User
+
+	column DigitalCode
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		sourceColumn: DigitalCode
+
+		annotation SummarizationSetBy = User
+
+	column StateText
+		dataType: string
+		summarizeBy: none
+		sourceColumn: StateText
+
+		annotation SummarizationSetBy = User
+
+	column EngUnits
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EngUnits
+
+		annotation SummarizationSetBy = User
+
+	column IsGood
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsGood
+
+		annotation SummarizationSetBy = User
+
+	column IsQuestionable
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsQuestionable
+
+		annotation SummarizationSetBy = User
+
+	column IsSubstituted
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsSubstituted
+
+		annotation SummarizationSetBy = User
+
+	column IsAnnotated
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsAnnotated
+
+		annotation SummarizationSetBy = User
+
+	column ResultScope
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ResultScope
+
+		annotation SummarizationSetBy = User
+
+	column SourceBackend
+		dataType: string
+		summarizeBy: none
+		sourceColumn: SourceBackend
+
+		annotation SummarizationSetBy = User
+
+	partition RunEvents = m
+		mode: import
+		source =
+				let
+				    Literal = (d as datetime) as text => DateTime.ToText(d, [Format = "yyyy-MM-dd HH:mm:ss", Culture = "en-US"]),
+				    Sql =
+				        "SELECT PointId, TagName, EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, TextValue, DigitalCode, StateText, EngUnits, IsGood, IsQuestionable, IsSubstituted, IsAnnotated, ResultScope, SourceBackend " &
+				        "FROM RecordedValues WHERE PointId = '" & Text.Replace(RunPointId, "'", "''") & "' " &
+				        "AND EventUtc >= {ts '" & Literal(WindowStartUtc) & "'} AND EventUtc < {ts '" & Literal(WindowEndUtc) & "'}",
+				    Source = Odbc.Query("dsn=" & Dsn, Sql)
+				in
+				    Source
+

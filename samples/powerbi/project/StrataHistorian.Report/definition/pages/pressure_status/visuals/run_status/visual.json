@@ -1,0 +1,161 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "run_status",
+  "position": {
+    "x": 10,
+    "y": 450,
+    "z": 10000,
+    "height": 260,
+    "width": 1260,
+    "tabOrder": 10000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "EventUtcRaw"
+                }
+              },
+              "queryRef": "RunEvents.EventUtcRaw",
+              "nativeQueryRef": "EventUtcRaw"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "EventSeq"
+                }
+              },
+              "queryRef": "RunEvents.EventSeq",
+              "nativeQueryRef": "EventSeq"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "ValueKind"
+                }
+              },
+              "queryRef": "RunEvents.ValueKind",
+              "nativeQueryRef": "ValueKind"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "StateText"
+                }
+              },
+              "queryRef": "RunEvents.StateText",
+              "nativeQueryRef": "StateText"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "DigitalCode"
+                }
+              },
+              "queryRef": "RunEvents.DigitalCode",
+              "nativeQueryRef": "DigitalCode"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "RunEvents"
+                    }
+                  },
+                  "Property": "IsGood"
+                }
+              },
+              "queryRef": "RunEvents.IsGood",
+              "nativeQueryRef": "IsGood"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "RunEvents"
+                  }
+                },
+                "Property": "EventUtcRaw"
+              }
+            },
+            "direction": "Ascending"
+          },
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "RunEvents"
+                  }
+                },
+                "Property": "EventSeq"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ],
+        "isDefaultSort": false
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Run status events (UTC)'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

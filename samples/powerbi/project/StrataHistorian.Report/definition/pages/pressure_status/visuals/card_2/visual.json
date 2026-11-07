@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "card_2",
+  "position": {
+    "x": 168,
+    "y": 10,
+    "z": 1000,
+    "height": 90,
+    "width": 150,
+    "tabOrder": 1000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "PressureEvents"
+                    }
+                  },
+                  "Property": "Events"
+                }
+              },
+              "queryRef": "PressureEvents.Events",
+              "nativeQueryRef": "Events"
+            }
+          ]
+        }
+      }
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

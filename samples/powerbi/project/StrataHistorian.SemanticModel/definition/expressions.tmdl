@@ -1,0 +1,25 @@
+/// System DSN name. Use the same name on every gateway node.
+expression Dsn = "StrataFixture" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = Text
+
+/// PointId of the pressure point, from the Points table.
+expression PressurePointId = "PT-PRESSURE-001" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = Text
+
+/// PointId of the run state point, from the Points table.
+expression RunPointId = "PT-RUNSTATE-001" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = Text
+
+/// Window start in UTC, inclusive.
+expression WindowStartUtc = #datetime(2026, 1, 15, 7, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = DateTime
+
+/// Window end in UTC, exclusive. Must be within MaxWindowDays of the start.
+expression WindowEndUtc = #datetime(2026, 1, 15, 9, 0, 0) meta [IsParameterQuery=true, Type="DateTime", IsParameterQueryRequired=true]
+
+	annotation PBI_ResultType = DateTime
+

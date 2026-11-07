@@ -1,0 +1,83 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "pressure_trend",
+  "position": {
+    "x": 10,
+    "y": 110,
+    "z": 9000,
+    "height": 330,
+    "width": 1260,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "PressureEvents"
+                    }
+                  },
+                  "Property": "EventUtc"
+                }
+              },
+              "queryRef": "PressureEvents.EventUtc",
+              "nativeQueryRef": "EventUtc"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Aggregation": {
+                  "Expression": {
+                    "Column": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "PressureEvents"
+                        }
+                      },
+                      "Property": "NumericValue"
+                    }
+                  },
+                  "Function": 1
+                }
+              },
+              "queryRef": "Avg(PressureEvents.NumericValue)",
+              "nativeQueryRef": "Pressure"
+            }
+          ]
+        }
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Pressure trend (UTC). Gaps are missing or bad readings, not zero'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

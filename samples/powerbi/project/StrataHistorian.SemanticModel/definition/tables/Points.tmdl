@@ -1,0 +1,66 @@
+table Points
+
+	column PointId
+		dataType: string
+		summarizeBy: none
+		sourceColumn: PointId
+
+		annotation SummarizationSetBy = User
+
+	column TagName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: TagName
+
+		annotation SummarizationSetBy = User
+
+	column Descriptor
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Descriptor
+
+		annotation SummarizationSetBy = User
+
+	column PointType
+		dataType: string
+		summarizeBy: none
+		sourceColumn: PointType
+
+		annotation SummarizationSetBy = User
+
+	column EngUnits
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EngUnits
+
+		annotation SummarizationSetBy = User
+
+	column DigitalSetName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DigitalSetName
+
+		annotation SummarizationSetBy = User
+
+	column IsStep
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsStep
+
+		annotation SummarizationSetBy = User
+
+	column SourceBackend
+		dataType: string
+		summarizeBy: none
+		sourceColumn: SourceBackend
+
+		annotation SummarizationSetBy = User
+
+	partition Points = m
+		mode: import
+		source =
+				let
+				    Source = Odbc.Query("dsn=" & Dsn, "SELECT PointId, TagName, Descriptor, PointType, EngUnits, DigitalSetName, IsStep, SourceBackend FROM Points")
+				in
+				    Source
+
