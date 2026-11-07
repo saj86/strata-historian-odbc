@@ -44,7 +44,7 @@ The DSN never holds a username or password. Your application or the gateway conn
 
 ## Connection settings and SQL
 
-Every read from `RecordedValues` must name a point and a time window, or the driver refuses it before contacting the source. Connect with `DSN=<name>`, plus `UID` and `PWD` only when the DSN uses `Auth=Basic`.
+Every read from `RecordedValues` must name a point, by `TagName` or `PointId`, and a time window, or the driver refuses it before contacting the source. Connect with `DSN=<name>`, plus `UID` and `PWD` only when the DSN uses `Auth=Basic`.
 
 | DSN setting | Default | Purpose |
 | --- | --- | --- |
@@ -71,8 +71,10 @@ The basic query has this shape, with the start inclusive, the end exclusive and 
 ```sql
 SELECT EventUtc, NumericValue, StateText, IsGood
 FROM RecordedValues
-WHERE PointId = ? AND EventUtc >= ? AND EventUtc < ?
+WHERE TagName = ? AND EventUtc >= ? AND EventUtc < ?
 ```
+
+`TagName` ignores letter case. For long-lived pipelines, prefer `PointId` from the `Points` table: a tag rename changes the tag but not the `PointId`.
 
 Three habits keep results correct:
 
@@ -106,7 +108,7 @@ Get-StrataPoint -Connection $connection |
 $start = [datetime]::SpecifyKind('2026-01-15 08:00:00', 'Utc')
 $end   = [datetime]::SpecifyKind('2026-01-15 09:00:00', 'Utc')
 
-$rows = Get-StrataRecordedValue -Connection $connection -PointId PT-PRESSURE-001 -Start $start -End $end
+$rows = Get-StrataRecordedValue -Connection $connection -TagName SYN.PRESSURE.PV -Start $start -End $end
 $rows | Format-Table EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, IsGood
 $rows | Export-Csv .\recorded.csv -NoTypeInformation -Encoding UTF8
 
@@ -128,7 +130,7 @@ EventUtcRaw                  EventSeq ValueKind NumericValue StateText IsGood
 
 **Long ranges:** `Get-StrataRecordedValue` splits the window into chunks, 24 hours by default, so it stays within `MaxWindowDays`. Change the size with `-ChunkHours`.
 
-**Real data:** prompt for the password rather than storing it, and take the `PointId` from `Get-StrataPoint`.
+**Real data:** prompt for the password rather than storing it, and use your own tag name.
 
 ```powershell
 $connection = New-StrataConnection -Dsn StrataPI -Credential (Get-Credential)
@@ -156,7 +158,7 @@ Import data with a bounded SQL query through Power BI's built-in ODBC connector;
 2. The project holds no data, so choose **Refresh**. If asked, choose Default or Custom credentials and approve running the native queries.
 3. Check the page: Data Source `fixture`, Events 7, Good Events 85.7%, Bad Or System Events 1, Questionable Or Substituted 2, Last Source Event 2026-01-15 08:15:00, and 4 run status rows. Preview Rows In Model should be blank.
 
-For real data, go to Transform data > Edit parameters and change `Dsn`, `PressurePointId`, `RunPointId`, `WindowStartUtc` and `WindowEndUtc`.
+For real data, go to Transform data > Edit parameters and change `Dsn`, `PressureTag`, `RunTag`, `WindowStartUtc` and `WindowEndUtc`.
 
 The steps below build the same thing by hand.
 
@@ -165,13 +167,13 @@ The steps below build the same thing by hand.
 ```powerquery
 let
     Dsn = "StrataFixture",
-    PointId = "PT-PRESSURE-001",
+    Tag = "SYN.PRESSURE.PV",
     WindowStartUtc = #datetime(2026, 1, 15, 8, 0, 0),
     WindowEndUtc = #datetime(2026, 1, 15, 9, 0, 0),
     Literal = (d as datetime) as text => DateTime.ToText(d, [Format = "yyyy-MM-dd HH:mm:ss", Culture = "en-US"]),
     Sql =
         "SELECT PointId, TagName, EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, EngUnits, IsGood, IsQuestionable, IsSubstituted, IsAnnotated, ResultScope, SourceBackend " &
-        "FROM RecordedValues WHERE PointId = '" & Text.Replace(PointId, "'", "''") & "' " &
+        "FROM RecordedValues WHERE TagName = '" & Text.Replace(Tag, "'", "''") & "' " &
         "AND EventUtc >= {ts '" & Literal(WindowStartUtc) & "'} AND EventUtc < {ts '" & Literal(WindowEndUtc) & "'}",
     Source = Odbc.Query("dsn=" & Dsn, Sql)
 in
@@ -215,6 +217,19 @@ Microsoft notes that attributes after `DSN=` in a connection string aren't inclu
 
 **Large history:** use incremental refresh with `samples/powerbi/IncrementalRefresh.pq`, so that each partition reads only its own time span. Power BI may warn that the query doesn't fold, and that's expected here because the bounds are already in the SQL. Turn on `TraceFile` to confirm what each partition read.
 
+## Excel
+
+Excel uses a similar ODBC path, so it's a quick first check once the driver is installed. It hasn't been run yet.
+
+1. In Excel, choose Data > Get Data > From Other Sources > From ODBC.
+2. Pick the `StrataFixture` DSN, open Advanced options, and paste this SQL:
+
+```sql
+SELECT EventUtc, NumericValue, StateText, IsGood FROM RecordedValues WHERE TagName = 'SYN.PRESSURE.PV' AND EventUtc >= {ts '2026-01-15 08:00:00'} AND EventUtc < {ts '2026-01-15 09:00:00'}
+```
+
+3. Choose Default or Custom credentials, then Load. You should get 7 rows.
+
 ## C# examples
 
 Use the standard `System.Data.Odbc` package: there is no Strata-specific client library. The sample in `samples/csharp/StrataSample` targets .NET 10 and ran on macOS against the fixture, including cancellation; Windows is not run yet. On Windows the project builds as x64 to match the driver.
@@ -222,10 +237,10 @@ Use the standard `System.Data.Odbc` package: there is no Strata-specific client 
 ```powershell
 cd samples\csharp\StrataSample
 dotnet run
-dotnet run -- StrataFixture PT-RUNSTATE-001 2026-01-15T07:00:00Z 2026-01-15T09:00:00Z
+dotnet run -- StrataFixture SYN.RUNSTATE 2026-01-15T07:00:00Z 2026-01-15T09:00:00Z
 ```
 
-The arguments are DSN, point, start and end. For a DSN that uses `Auth=Basic`, the sample reads the login from the `STRATA_UID` and `STRATA_PWD` environment variables.
+The arguments are DSN, tag name, start and end. For a DSN that uses `Auth=Basic`, the sample reads the login from the `STRATA_UID` and `STRATA_PWD` environment variables.
 
 **Connect:**
 
@@ -243,11 +258,11 @@ connection.Open();
 const string sql = """
     SELECT EventUtc, EventUtcRaw, EventSeq, ValueKind, NumericValue, StateText, IsGood
     FROM RecordedValues
-    WHERE PointId = ? AND EventUtc >= ? AND EventUtc < ?
+    WHERE TagName = ? AND EventUtc >= ? AND EventUtc < ?
     """;
 
 using var command = new OdbcCommand(sql, connection) { CommandTimeout = 300 };
-command.Parameters.Add("PointId", OdbcType.NVarChar, 256).Value = "PT-PRESSURE-001";
+command.Parameters.Add("Tag", OdbcType.NVarChar, 256).Value = "SYN.PRESSURE.PV";
 command.Parameters.Add("Start", OdbcType.DateTime).Value = new DateTime(2026, 1, 15, 8, 0, 0, DateTimeKind.Utc);
 command.Parameters.Add("End", OdbcType.DateTime).Value = new DateTime(2026, 1, 15, 9, 0, 0, DateTimeKind.Utc);
 
@@ -316,9 +331,9 @@ Start from the SQLSTATE in the error: the driver uses it to say why a call faile
 
 | SQLSTATE | Meaning | What to do |
 | --- | --- | --- |
-| `42000` | Read refused: no point or time bounds, over a limit, or access denied | Add `PointId` and both `EventUtc` bounds, or split the window. If it says access denied, ask the PI administrator |
+| `42000` | Read refused: no point or time bounds, over a limit, or access denied | Add `TagName` or `PointId` and both `EventUtc` bounds, or split the window. If it says access denied, ask the PI administrator |
 | `0A000` | Not supported: a write, join, `GROUP BY`, `OR`, `LIKE` or similar | Rewrite within the supported SQL, or do that step in your application or model |
-| `42S02` | Table or point not found, or not visible to this identity | Check the name, and take `PointId` from `Points` |
+| `42S02` | Table, tag or point not found, or not visible to this identity | Check the name against the `Points` table |
 | `42S22` | Unknown column | Check the column list in this guide |
 | `07002` | A `?` has no bound parameter | Bind one value per `?`, in order |
 | `22007` | Bad date or time value | Use `yyyy-MM-dd HH:mm:ss`, or a typed timestamp parameter |

@@ -18,11 +18,16 @@ QUICK TEST ON WINDOWS (64-bit Windows 10 or 11, nothing else needed)
        cd C:\strata-test
        powershell -ExecutionPolicy Bypass -File .\scripts\Test-Package.ps1
      It should end with ALL PASSED. If not, keep the output: it is useful.
+     This also runs the driver's PI Web API path against a local mock. No PI server is involved.
   3. To remove the driver afterwards:
        powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninstall
 
+CHECK YOUR PI WEB API (read-only, GET requests only; ask your PI administrator first)
+  .\scripts\Test-PiWebApi.ps1 -BaseUrl https://YOUR-SERVER/piwebapi
+
 WHAT TO OPEN
   docs\usage-guide.md             Install and use it, with PowerShell, Power BI and C# examples
+  docs\team-rollout.md            Who needs what, and the licence question to ask
   docs\status-and-gates.md        What has and hasn't been tested, and open questions
   docs\powerbi-acceptance.md      Step-by-step Power BI test
   docs\operator-guide.md          Build the MSI, gateway deployment, upgrade and rollback

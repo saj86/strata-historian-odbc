@@ -44,8 +44,8 @@ macOS arm64, Apple clang 21, unixODBC 2.3.14 built privately, zig 0.17.1 (mingw-
 
 | Test | Result | What it establishes | What it does not |
 |---|---|---|---|
-| `core_tests` | Passed: 212 checks, 0 failures | Parser, planner, fixture semantics, PI Web API mapping against scripted responses, config rules | Any server behavior |
-| `odbc_smoke` through the unixODBC driver manager | Passed: 782 checks, 0 failures | ODBC call paths, Unicode, binding, rowsets, diagnostics, cancel, concurrency, golden rows | Windows driver manager or Power BI behavior |
+| `core_tests` | Passed: 236 checks, 0 failures | Parser, planner, fixture semantics, PI Web API mapping against scripted responses, config rules | Any server behavior |
+| `odbc_smoke` through the unixODBC driver manager | Passed: 790 checks, 0 failures | ODBC call paths, Unicode, binding, rowsets, diagnostics, cancel, concurrency, golden rows | Windows driver manager or Power BI behavior |
 | Both under AddressSanitizer + UBSan | Passed: 0 findings | No memory or undefined-behavior errors on those paths | WinHTTP code, which does not run here |
 | Both under ThreadSanitizer | Passed: 0 findings | No data races on those paths (8 threads, cancel thread) | Same |
 | Windows x64 cross-compile (zig/mingw-w64) | Passed: 0 warnings | Source compiles and links against Windows headers, including WinHTTP and setup code | That the DLL loads or runs; MSVC behavior |
@@ -54,7 +54,7 @@ macOS arm64, Apple clang 21, unixODBC 2.3.14 built privately, zig 0.17.1 (mingw-
 | Fabric rules model | Passed: 29 tests | Replay, crash, watermark, amend, delete, checksum, precision, window validation and point merge rules | Spark, Delta or Fabric |
 | PowerShell scripts | 0 parse errors (PowerShell 7) | Syntax | Any behavior; they need Windows |
 | Power BI project: consistency tests, JSON schemas, TMDL parser, SQL through the driver | Passed: 8 tests; 17 files; 4 tables, 8 measures, 2 relationships; 2, 7 and 4 rows | The files match Microsoft's formats and agree with each other and the driver | That Desktop opens them, that DAX and M run, or how the page looks |
-| `tests/mock_piwebapi.py` | Passed: manual `curl` of 3 routes | The mock responds | Anything about PI |
+| `scripts/Test-DriverWithMock.ps1` against `scripts/MockPiWebApi.ps1` | Passed: 27 checks on macOS through the loopback transport | Backend paging, retries, error mapping, timeouts and row mapping over real HTTP | WinHTTP, TLS, authentication, or anything about PI. The mock follows the field contract above, so it can't disprove that contract |
 | WiX build | **Failed on macOS: WIX0389**; same error with a no-space name, and WiX warns it supports only Windows | Nothing. Treat MSI as Not run | |
 
 ### Mutation check

@@ -17,8 +17,8 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 
 | Check | Environment | Status | Result |
 |---|---|---|---|
-| Portable core tests | macOS arm64, Apple clang 21 | Passed | 212 checks, 0 failures |
-| Native ODBC smoke, including exact golden rows | macOS, unixODBC 2.3.14 driver manager | Passed | 782 checks, 0 failures |
+| Portable core tests | macOS arm64, Apple clang 21 | Passed | 236 checks, 0 failures |
+| Native ODBC smoke, including exact golden rows | macOS, unixODBC 2.3.14 driver manager | Passed | 790 checks, 0 failures |
 | Both under ASan + UBSan | same | Passed | 0 findings |
 | Both under TSan | same | Passed | 0 findings |
 | Windows x64 DLL and test executables compile and link | zig 0.17.1 mingw-w64 cross build | Passed | 0 warnings |
@@ -26,6 +26,8 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | C# sample through .NET `OdbcConnection` | macOS, .NET 10, unixODBC | Passed | 7 rows, refusals, schema probe, mid-read cancel |
 | PowerShell sample through `OdbcConnection` | macOS, PowerShell 7.6, unixODBC | Passed | 7 rows, refusal, CSV export, chunked windows |
 | `make build`, `test`, `install`, `uninstall`, `package-windows` | macOS | Passed | Clean rebuild; queried through the installed driver |
+| Driver's PI Web API path over real HTTP against the mock | macOS, loopback test transport | Passed | 27 checks: paging, retries, denied, truncated response, timeout, lost server. **WinHTTP itself not exercised** |
+| `Test-PiWebApi.ps1` against the mock | macOS, PowerShell 7.6 | Passed | Open and sign-in-required modes, unknown tag, server gone |
 | Fabric rules model | Python 3.14 | Passed | 29 tests |
 | Power BI project consistency | Python 3.14 | Passed | 8 tests: visual fields, model columns, SQL and driver catalog agree |
 | Power BI project JSON | Microsoft's published schemas | Passed | 17 files, 0 errors. A deliberately broken copy was rejected |
@@ -37,7 +39,8 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | MSI build | macOS | **Failed** | WiX supports only Windows; treat MSI as unverified |
 | MSVC build, `ctest` on Windows | | Not run | |
 | Driver DLL loaded by the Windows driver manager | | Not run | |
-| WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only; this code has never executed |
+| WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only. `Test-Package.ps1` now runs WinHTTP against the mock on Windows |
+| Excel over ODBC | | Not run | |
 | PowerShell behavior | | Not run | |
 | Power Query M, `.mez` | | Not run | |
 | Power BI project opened in Desktop, DAX measures, M queries, page layout | | Not run | No schema or parser here evaluates these |
@@ -62,8 +65,8 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 
 Blocking:
 
-1. **Does the site hold a PSA licence that covers this driver?**
-2. Is PI Web API deployed? Version? Which authentication?
+1. **Does the site hold a PSA licence that covers this driver?** The question to send is in [team-rollout.md](team-rollout.md).
+2. Is PI Web API deployed? Version? Which authentication? `scripts/Test-PiWebApi.ps1` answers these.
 3. Which reference product and version define "full coverage"?
 4. What trusted reader is approved for Gate B?
 
@@ -71,7 +74,7 @@ Decisions for later:
 
 5. Final driver name, before Gate C.
 6. Correction horizon for late and amended history.
-7. Gateway identity and audience: one model for everyone, or row-level security?
+7. Gateway identity and audience: one model for everyone, or row-level security? See [team-rollout.md](team-rollout.md).
 8. Provider-specific query migration: are there existing queries to port?
 9. Do write, admin or COM compatibility need to be in scope? Currently blocked by design.
 
