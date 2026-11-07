@@ -93,7 +93,7 @@ Use example 3 in `powerquery/examples.pq`. `RangeStart` is inclusive and `RangeE
 
 ## Performance measures
 
-Targets are **provisional until the site supplies a baseline**. Compare across runs: rows, upstream requests, bytes, refresh duration, source query duration. `TraceFile` provides per-request `op`, `attempt`, `status`, `ms`, `rows`, and correlation IDs. Watch PI Web API server load during the first full load. Add monitoring on that server, since the driver can only see its own side. Bytes are not traced yet.
+Targets are **provisional until the site supplies a baseline**. Compare across runs: rows, upstream requests, bytes, refresh duration, source query duration. `TraceFile` provides per-request `op`, `attempt`, `status`, `bytes`, `ms`, `rows`, and correlation IDs. Watch PI Web API server load during the first full load. Add monitoring on that server, since the driver can only see its own side.
 
 ## Health checks and drift
 

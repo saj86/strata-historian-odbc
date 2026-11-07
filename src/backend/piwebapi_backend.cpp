@@ -256,14 +256,14 @@ private:
             } catch (const Error& e) {
                 gate_.release();
                 bool transient = e.sqlstate == "08S01" && attempt <= cfg_.maxRetries;
-                log(corr, op, attempt, 0, t0, e.sqlstate);
+                log(corr, op, attempt, 0, 0, t0, e.sqlstate);
                 if (!transient) throw;
                 c.sleepMs(backoffMs);
                 backoffMs *= 2;
                 continue;
             }
             gate_.release();
-            log(corr, op, attempt, resp.status, t0, "");
+            log(corr, op, attempt, resp.status, resp.body.size(), t0, "");
             if (!retryable(resp.status) || attempt > cfg_.maxRetries) return resp;
             long long waitMs = backoffMs;
             if (!resp.retryAfter.empty()) {
@@ -279,10 +279,10 @@ private:
             backoffMs *= 2;
         }
     }
-    void log(const std::string& corr, const char* op, int attempt, int status, std::chrono::steady_clock::time_point t0, const std::string& err) {
+    void log(const std::string& corr, const char* op, int attempt, int status, size_t bytes, std::chrono::steady_clock::time_point t0, const std::string& err) {
         if (!cfg_.trace.enabled()) return;
         auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - t0).count();
-        cfg_.trace.write(corr, "http", "\"op\":" + Trace::quote(op) + ",\"attempt\":" + std::to_string(attempt) + ",\"status\":" + std::to_string(status) + ",\"ms\":" + std::to_string(ms) + ",\"error\":" + Trace::quote(err));
+        cfg_.trace.write(corr, "http", "\"op\":" + Trace::quote(op) + ",\"attempt\":" + std::to_string(attempt) + ",\"status\":" + std::to_string(status) + ",\"bytes\":" + std::to_string(bytes) + ",\"ms\":" + std::to_string(ms) + ",\"error\":" + Trace::quote(err));
     }
     PiWebApiConfig cfg_;
     std::unique_ptr<HttpTransport> http_;

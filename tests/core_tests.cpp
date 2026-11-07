@@ -2,6 +2,9 @@
 // inputs. They are not evidence of connectivity to a PI server.
 #include <cstdio>
 #include <deque>
+#include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <set>
 #include <thread>
 
@@ -257,7 +260,7 @@ struct Live {
     Fake* fake;
     std::unique_ptr<Backend> b;
     CancelToken c;
-    explicit Live(int retries = 2) {
+    explicit Live(int retries = 2, std::string tracePath = {}) {
         auto f = std::make_unique<Fake>();
         fake = f.get();
         PiWebApiConfig cfg;
@@ -266,6 +269,7 @@ struct Live {
         cfg.dataServer = "SYN SERVER";
         cfg.maxRetries = retries;
         cfg.maxRetryAfterSeconds = 1;
+        cfg.trace = Trace(tracePath);
         b = makePiWebApiBackend(cfg, std::move(f));
     }
     RecordedPage read(int pageSize = 3, std::string cont = {}) {
@@ -341,6 +345,20 @@ static void testPiWebApi() {
         tooLong.fake->script.push_back(HttpResponse{429, "", "9999"});
         EXPECT_STATE("08S01", tooLong.read());
         CHECK(tooLong.fake->urls.size() == 1);  // policy refuses to wait that long
+    }
+    {   // the trace records upstream bytes per request, and no credentials or URLs
+        auto path = std::filesystem::temp_directory_path() / "strata-core-trace.jsonl";
+        std::filesystem::remove(path);
+        Live l(1, path.string());
+        std::string body = "{\"Items\":[]}";
+        l.fake->script.push_back(ok(body));
+        l.read();
+        std::ifstream f(path);
+        std::string text((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+        CHECK(text.find("\"op\":\"readRecorded\",\"attempt\":1,\"status\":200,\"bytes\":" + std::to_string(body.size())) != std::string::npos);
+        CHECK(text.find("mock") == std::string::npos);
+        f.close();
+        std::filesystem::remove(path);
     }
     {   // network drop retried then reported
         Live l(1);
