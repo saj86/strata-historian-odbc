@@ -12,6 +12,7 @@
 #include "../src/core/json.h"
 #include "../src/core/planner.h"
 #include "../src/odbc/config.h"
+#include "../src/odbc/dsn_form.h"
 
 using namespace strata;
 
@@ -531,6 +532,49 @@ static void testJson() {
     if (!threw) { failures++; std::printf("FAIL deep json accepted\n"); }
 }
 
+static void testDsnForm() {
+    DsnForm f;
+    f.name = "StrataPI";
+    f.baseUrl = "https://piweb.example.local/piwebapi";
+    f.dataServer = "PISRV01";
+    CHECK(validateDsnForm(f).empty());
+    // Saved keys never include credentials, and fixture mode clears the server settings.
+    for (auto& [k, v] : dsnAttributes(f)) CHECK(k != "UID" && k != "PWD");
+    DsnForm fx = f;
+    fx.backend = "fixture";
+    for (auto& [k, v] : dsnAttributes(fx))
+        if (k == "BaseUrl" || k == "DataServer" || k == "Auth") CHECK(v.empty());
+    CHECK(validateDsnForm(fx).empty());
+    // Basic is valid without a stored password: it comes at connect time.
+    DsnForm basic = f;
+    basic.auth = "Basic";
+    CHECK(validateDsnForm(basic).empty());
+    // Each rule produces a message, and the window accepts what a connection accepts.
+    auto bad = [&](auto change) { DsnForm b = f; change(b); return validateDsnForm(b); };
+    CHECK(!bad([](DsnForm& b) { b.name.clear(); }).empty());
+    CHECK(!bad([](DsnForm& b) { b.name = std::string(33, 'a'); }).empty());
+    CHECK(!bad([](DsnForm& b) { b.name = "a;b"; }).empty());
+    CHECK(!bad([](DsnForm& b) { b.baseUrl.clear(); }).empty());
+    CHECK(!bad([](DsnForm& b) { b.dataServer.clear(); }).empty());
+    CHECK(!bad([](DsnForm& b) { b.baseUrl = "http://piweb.example.local/piwebapi"; }).empty());
+    CHECK(!bad([](DsnForm& b) { b.pageSize = 0; }).empty());
+    CHECK(!bad([](DsnForm& b) { b.pageSize = 150001; }).empty());
+    CHECK(!bad([](DsnForm& b) { b.maxWindowDays = 0; }).empty());
+    // Round trip through the stored keys.
+    std::map<std::string, std::string> stored;
+    for (auto& [k, v] : dsnAttributes(basic)) stored[k] = v;
+    DsnForm back = dsnFormFromLookup("StrataPI", [&](const std::string& k) { return stored.count(k) ? stored[k] : std::string{}; });
+    CHECK(back.baseUrl == basic.baseUrl && back.dataServer == basic.dataServer && back.auth == "Basic" && back.pageSize == 1000 && !back.navigatorPreview);
+    // The Test button sends credentials once and works against the fixture with no server.
+    KeyValues kv = dsnTestConnection(basic, "me", "secret");
+    CHECK(kv["UID"] == "me" && kv["PWD"] == "secret" && kv["MAXRETRIES"] == "0");
+    Config cfg = resolveConfig(dsnTestConnection(fx, "", ""), nullptr);
+    auto backend = makeBackend(cfg);
+    CancelToken token;
+    backend->testConnection(token);
+    CHECK(backend->name() == "fixture");
+}
+
 int main() {
     testTime();
     testJson();
@@ -539,6 +583,7 @@ int main() {
     testFixtureSemantics();
     testPiWebApi();
     testConfig();
+    testDsnForm();
     std::printf("core_tests: %d checks, %d failures\n", checks, failures);
     return failures ? 1 : 0;
 }
