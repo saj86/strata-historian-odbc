@@ -1,42 +1,107 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- WiX v5. x64 per-machine MSI: installs the DLL and registers the driver. Creates no DSN and no secrets. -->
-<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+<!-- WiX v5. x64 per-machine MSI with a setup wizard. It installs and registers the driver, and optionally the
+     documents, examples and an OLE DB data link. It creates no data source and stores no credentials.
+     Build with scripts\Build-Installer.ps1. -->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <Package Name="Strata Historian ODBC Driver"
-           Manufacturer="Internal"
+           Manufacturer="Strata Historian project"
            Version="$(var.ProductVersion)"
            UpgradeCode="6F7C1B7E-4B1E-4C2A-9D57-3E8A0C5D2F11"
            Scope="perMachine"
            InstallerVersion="500"
            Compressed="yes">
+    <SummaryInformation Description="Read-only ODBC driver for PI data through PI Web API" />
     <MajorUpgrade Schedule="afterInstallInitialize"
-                  DowngradeErrorMessage="A newer version is installed. To roll back, uninstall it first, then install the older signed MSI. See docs/operator-guide.md." />
+                  DowngradeErrorMessage="A newer version is already installed. To go back to an older version, uninstall this one first, then install the older one." />
     <MediaTemplate EmbedCab="yes" />
-
-    <!-- WiX refuses to build this for anything but x64 (-arch x64); this also blocks a 32-bit OS. -->
     <Launch Condition="VersionNT64" Message="This driver requires 64-bit Windows." />
 
+    <!-- Programs and Features -->
+    <Property Id="ARPCOMMENTS" Value="Read-only ODBC driver for PI data through PI Web API." />
+    <Property Id="ARPURLINFOABOUT" Value="https://github.com/saj86/strata-historian-odbc" />
+    <Property Id="ARPHELPLINK" Value="https://github.com/saj86/strata-historian-odbc/blob/main/docs/usage-guide.md" />
+
+    <!-- Setup wizard: Welcome, licence, features and folder, install, finish -->
+    <ui:WixUI Id="WixUI_FeatureTree" />
+    <WixVariable Id="WixUILicenseRtf" Value="$(var.SourceRoot)\installer\License.rtf" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Open ODBC Data Sources (64-bit) to set up a data source" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOX" Value="1" />
+    <CustomAction Id="OpenOdbcAdministrator" Directory="INSTALLFOLDER" ExeCommand="&quot;[System64Folder]odbcad32.exe&quot;" Return="asyncNoWait" />
+    <UI>
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="OpenOdbcAdministrator"
+               Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 AND NOT Installed" />
+    </UI>
+
     <StandardDirectory Id="ProgramFiles64Folder">
-      <Directory Id="INSTALLFOLDER" Name="Strata Historian ODBC" />
+      <Directory Id="INSTALLFOLDER" Name="Strata Historian ODBC">
+        <Directory Id="DOCSFOLDER" Name="docs" />
+        <Directory Id="SAMPLESFOLDER" Name="samples" />
+      </Directory>
+    </StandardDirectory>
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="MENUFOLDER" Name="Strata Historian ODBC" />
     </StandardDirectory>
 
-    <Feature Id="Driver" Title="ODBC driver" Level="1">
-      <Component Id="DriverDll" Directory="INSTALLFOLDER" Bitness="always64" Guid="9C0D1E55-2F4B-4A7E-8C33-1B7D6A9E4F20">
-        <File Id="StrataOdbcDll" Source="$(var.DriverPath)" KeyPath="yes" />
-      </Component>
-      <!-- Standard ODBC driver registration; 64-bit hive only. The driver owns these names. -->
-      <Component Id="DriverRegistry" Directory="INSTALLFOLDER" Bitness="always64" Guid="1D2E8B44-7A63-4F19-B6C2-5E0A9C3D7F31">
-        <RegistryValue Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers" Name="Strata Historian ODBC Driver" Type="string" Value="Installed" KeyPath="yes" />
-        <RegistryKey Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\Strata Historian ODBC Driver">
-          <RegistryValue Name="Driver" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
-          <RegistryValue Name="Setup" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
-          <RegistryValue Name="APILevel" Type="string" Value="1" />
-          <RegistryValue Name="ConnectFunctions" Type="string" Value="YYN" />
-          <RegistryValue Name="DriverODBCVer" Type="string" Value="03.52" />
-          <RegistryValue Name="FileUsage" Type="string" Value="0" />
-          <RegistryValue Name="SQLLevel" Type="string" Value="0" />
-          <RegistryValue Name="UsageCount" Type="integer" Value="1" />
-        </RegistryKey>
-      </Component>
+    <Feature Id="Driver" Title="ODBC driver" Level="1" AllowAbsent="no" Display="expand" ConfigurableDirectory="INSTALLFOLDER"
+             Description="The driver, registered with Windows. Required.">
+      <ComponentRef Id="DriverDll" />
+      <ComponentRef Id="DriverRegistry" />
+      <ComponentRef Id="MenuShortcuts" />
+      <Feature Id="Documentation" Title="Documents and examples" Level="1"
+               Description="Usage guide, rollout plan, and PowerShell, C# and Power BI examples, including a Power BI project.">
+        <ComponentGroupRef Id="Docs" />
+        <ComponentGroupRef Id="Samples" />
+        <ComponentRef Id="DocsShortcuts" />
+      </Feature>
+      <Feature Id="OleDb" Title="OLE DB data link (experimental)" Level="1"
+               Description="Opens the Windows Data Link Properties window for the driver, through Microsoft's built-in OLE DB Provider for ODBC Drivers.">
+        <ComponentRef Id="OleDbLink" />
+      </Feature>
     </Feature>
+
+    <Component Id="DriverDll" Directory="INSTALLFOLDER" Bitness="always64" Guid="9C0D1E55-2F4B-4A7E-8C33-1B7D6A9E4F20">
+      <File Id="StrataOdbcDll" Source="$(var.DriverPath)" Name="strataodbc.dll" KeyPath="yes" />
+    </Component>
+    <!-- Standard ODBC driver registration in the 64-bit hive. Setup points at the same DLL, which provides the settings window. -->
+    <Component Id="DriverRegistry" Directory="INSTALLFOLDER" Bitness="always64" Guid="1D2E8B44-7A63-4F19-B6C2-5E0A9C3D7F31">
+      <RegistryValue Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\ODBC Drivers" Name="Strata Historian ODBC Driver" Type="string" Value="Installed" KeyPath="yes" />
+      <RegistryKey Root="HKLM" Key="SOFTWARE\ODBC\ODBCINST.INI\Strata Historian ODBC Driver">
+        <RegistryValue Name="Driver" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
+        <RegistryValue Name="Setup" Type="string" Value="[INSTALLFOLDER]strataodbc.dll" />
+        <RegistryValue Name="APILevel" Type="string" Value="1" />
+        <RegistryValue Name="ConnectFunctions" Type="string" Value="YYN" />
+        <RegistryValue Name="DriverODBCVer" Type="string" Value="03.52" />
+        <RegistryValue Name="FileUsage" Type="string" Value="0" />
+        <RegistryValue Name="SQLLevel" Type="string" Value="0" />
+        <RegistryValue Name="UsageCount" Type="integer" Value="1" />
+      </RegistryKey>
+    </Component>
+
+    <Component Id="MenuShortcuts" Directory="MENUFOLDER" Guid="5B2C8E71-3D9A-4F06-A1B7-0C4E6D8F2A93">
+      <Shortcut Id="OdbcAdministratorShortcut" Name="ODBC Data Sources (64-bit)"
+                Description="Add or configure Strata Historian data sources" Target="[System64Folder]odbcad32.exe" />
+      <RemoveFolder Id="RemoveMenuFolder" On="uninstall" />
+      <RegistryValue Root="HKMU" Key="Software\Strata Historian ODBC" Name="MenuShortcuts" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+    <Component Id="DocsShortcuts" Directory="MENUFOLDER" Guid="C7E19A42-6B3D-4E58-9F20-8A1D5C7B3E64">
+      <Shortcut Id="UsageGuideShortcut" Name="Usage guide" Description="How to install and use the driver" Target="[DOCSFOLDER]usage-guide.md" />
+      <Shortcut Id="ExamplesShortcut" Name="Documents and examples" Description="Open the installed documents and examples" Target="[INSTALLFOLDER]" />
+      <RegistryValue Root="HKMU" Key="Software\Strata Historian ODBC" Name="DocsShortcuts" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+    <Component Id="OleDbLink" Directory="INSTALLFOLDER" Guid="E2A84C19-7F5B-4D63-B08E-3C9A1F6D4B27">
+      <File Id="OleDbUdl" Source="$(var.SourceRoot)\installer\StrataHistorian-OLEDB.udl" KeyPath="yes" />
+      <Shortcut Id="OleDbShortcut" Directory="MENUFOLDER" Name="OLE DB data link (experimental)"
+                Description="Test the driver through the OLE DB Provider for ODBC Drivers" Target="[INSTALLFOLDER]StrataHistorian-OLEDB.udl" />
+    </Component>
+
+    <ComponentGroup Id="Docs" Directory="DOCSFOLDER">
+      <Files Include="$(var.SourceRoot)\docs\**" />
+    </ComponentGroup>
+    <ComponentGroup Id="Samples" Directory="SAMPLESFOLDER">
+      <Files Include="$(var.SourceRoot)\samples\**">
+        <Exclude Files="$(var.SourceRoot)\samples\**\bin\**" />
+        <Exclude Files="$(var.SourceRoot)\samples\**\obj\**" />
+      </Files>
+    </ComponentGroup>
   </Package>
 </Wix>

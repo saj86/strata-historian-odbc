@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS  Clean build, unit tests, MSI build and native ODBC smoke test on Windows x64.
 .EXAMPLE   .\scripts\Build-And-Test.ps1 -Version 0.1.0
-.NOTES     Needs Visual Studio 2022 C++ tools, Windows SDK, CMake 3.21+. MSI needs: dotnet tool install --global wix --version 5.*
+.NOTES     Needs Visual Studio 2022 C++ tools, Windows SDK, CMake 3.21+ and the .NET SDK (for WiX).
            Installing the MSI and writing System DSNs requires an elevated session.
 #>
 [CmdletBinding()]
@@ -24,11 +24,8 @@ $bin = Join-Path $root 'build\windows-x64\Release'
 & (Join-Path $bin 'core_tests.exe')
 if ($LASTEXITCODE) { throw 'core_tests failed' }
 
-$dll = Join-Path $bin 'strataodbc.dll'
-$msi = Join-Path $root "build\strataodbc-$Version-x64.msi"
-wix build installer\strataodbc.wxs -arch x64 -d "ProductVersion=$Version" -d "DriverPath=$dll" -o $msi
-if ($LASTEXITCODE) { throw 'MSI build failed' }
-Write-Host "MSI: $msi"
+& "$PSScriptRoot\Build-Installer.ps1" -Version $Version -DllPath (Join-Path $bin 'strataodbc.dll')
+$msi = Join-Path $root "dist\strataodbc-$Version-x64.msi"
 
 if ($SkipInstall) { return }
 
