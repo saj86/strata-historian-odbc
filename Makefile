@@ -5,6 +5,7 @@
 #   make query      open an interactive SQL prompt on the fixture DSN
 #   make package-windows   build the unsigned Windows test zip (needs no Windows machine)
 #   make package   build one complete zip: binaries, documents, examples and source
+#   make check-pbip   check the Power BI project without Power BI Desktop
 # This is not the Windows release path: use scripts/Build-And-Test.ps1 on Windows for the MSI.
 
 VERSION   ?= 0.1.0
@@ -26,7 +27,7 @@ COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null)
 FULL      := strata-odbc-$(VERSION)-complete-UNSIGNED-$(COMMIT)
 export PATH := $(VENV)/bin:$(ODBC)/bin:$(PATH)
 
-.PHONY: all tools build test install uninstall query package-windows package clean
+.PHONY: all tools build test install uninstall query package-windows package check-pbip clean
 all: build
 
 $(VENV)/.done:
@@ -53,6 +54,7 @@ build: tools
 test: tools
 	ODBC_PREFIX=$(ODBC) CMAKE=$(CMAKE) NINJA=$(VENV)/bin/ninja BUILD=$(BUILD) scripts/run-dev-tests.sh
 	python3 -B -m unittest discover -s fabric/tests
+	python3 -B tests/test_pbip.py
 
 install: build
 	mkdir -p $(PREFIX)/lib $(PREFIX)/etc $(PREFIX)/bin
@@ -97,6 +99,15 @@ package: package-windows
 	cd dist/$(FULL) && shasum -a 256 bin/* > SHA256SUMS.txt
 	cd dist && zip -qr -FS $(FULL).zip $(FULL) && shasum -a 256 $(FULL).zip > $(FULL).zip.sha256
 	@ls -l dist/$(FULL).zip
+
+# Checks the Power BI project without Power BI Desktop: consistency, Microsoft's JSON schemas, Microsoft's TMDL
+# parser, and the project's own SQL through the installed driver. Needs .NET and network access.
+check-pbip: $(VENV)/.done
+	$(VENV)/bin/pip -q install --disable-pip-version-check jsonschema referencing
+	python3 -B tests/test_pbip.py
+	$(VENV)/bin/python -B tests/validate_pbip_schemas.py samples/powerbi/project
+	dotnet run --project tools/tmdlcheck -c Release --artifacts-path build/tmdlcheck -- samples/powerbi/project/StrataHistorian.SemanticModel/definition
+	python3 -B tests/test_pbip.py --print-sql | $(PREFIX)/bin/strata-sql | grep -E 'rows fetched|ERROR'
 
 clean:
 	rm -rf build/dev build/cross-windows dist
