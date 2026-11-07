@@ -14,7 +14,7 @@ endif()
 add_library(strata_core STATIC
   src/core/timeutil.cpp src/core/json.cpp src/core/catalog.cpp src/core/sql.cpp src/core/planner.cpp
   src/backend/fixture_backend.cpp src/backend/piwebapi_backend.cpp src/backend/winhttp_transport.cpp src/backend/loopback_transport.cpp
-  src/odbc/config.cpp)
+  src/odbc/config.cpp src/odbc/dsn_form.cpp)
 if(MSVC)
   target_compile_options(strata_core PRIVATE /W4 /permissive- /utf-8)
   # Static CRT: no VC++ redistributable prerequisite on gateway nodes.
@@ -35,7 +35,7 @@ add_library(strataodbc SHARED src/odbc/driver.cpp src/odbc/setup_win.cpp)
 target_link_libraries(strataodbc PRIVATE strata_core)
 if(WIN32)
   enable_language(RC)
-  target_sources(strataodbc PRIVATE src/odbc/strataodbc.def src/odbc/version.rc)
+  target_sources(strataodbc PRIVATE src/odbc/strataodbc.def src/odbc/strataodbc.rc)
   target_link_libraries(strataodbc PRIVATE odbccp32 user32)
   if(MSVC)
     target_link_libraries(strataodbc PRIVATE legacy_stdio_definitions)  # odbccp32.lib needs it
