@@ -42,6 +42,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninsta
 
 The DSN never holds a username or password. Your application or the gateway connection supplies them at connect time.
 
+**Not sure whether PI Web API is installed?** Ask your PI administrator for approval, then run this read-only check. It sends GET requests only, prints no values, and shows the version and sign-in methods:
+
+```powershell
+.\scripts\Test-PiWebApi.ps1 -BaseUrl https://YOUR-SERVER/piwebapi
+```
+
 ## Connection settings and SQL
 
 Every read from `RecordedValues` must name a point, by `TagName` or `PointId`, and a time window, or the driver refuses it before contacting the source. Connect with `DSN=<name>`, plus `UID` and `PWD` only when the DSN uses `Auth=Basic`.
