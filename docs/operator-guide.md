@@ -60,7 +60,7 @@ It is idempotent, targets the x64 hive, removes settings not in the desired stat
 | `NavigatorPreview`, `PreviewWindowHours`, `PreviewRows` | 0, 24, 100 | See SQL contract |
 | `TraceFile` | off | JSON-lines; must be writable by the process identity |
 
-Limits on retries: transient failures (429, 502, 503, 504, link failure) back off from 0.5 s, doubling, up to `MaxRetries`. `Retry-After` in seconds is honored, up to 60 s; longer, and the driver fails rather than wait. Everything else fails at once. The cap on load across a whole cluster is `nodes × processes × MaxConcurrency`: mashup processes can multiply, so **measure before tightening or relaxing**.
+Limits on retries: transient failures (429, 502, 503, 504, link failure) back off from 0.5 s, doubling, up to `MaxRetries`. `Retry-After`, in seconds or as an HTTP date, is honored up to 60 s; longer, and the driver fails rather than wait. Everything else fails at once. The cap on load across a whole cluster is `nodes × processes × MaxConcurrency`: mashup processes can multiply, so **measure before tightening or relaxing**.
 
 ## Hosts
 

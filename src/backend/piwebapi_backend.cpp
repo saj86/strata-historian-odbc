@@ -48,6 +48,34 @@ private:
     int free_;
 };
 
+// IMF-fixdate only ("Sun, 06 Nov 1994 08:49:37 GMT"), the form RFC 9110 requires senders to use.
+bool parseHttpDate(const std::string& s, Ticks& out) {
+    char weekday[4], month[4], zone[4];
+    int d, y, h, mi, sec;
+    if (std::sscanf(s.c_str(), "%3[A-Za-z], %d %3s %d %d:%d:%d %3s", weekday, &d, month, &y, &h, &mi, &sec, zone) != 8) return false;
+    if (std::string_view(zone) != "GMT") return false;
+    static const char* months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+    for (int m = 0; m < 12; m++) {
+        if (std::string_view(month) != months[m]) continue;
+        char iso[32];
+        std::snprintf(iso, sizeof iso, "%04d-%02d-%02dT%02d:%02d:%02dZ", y, m + 1, d, h, mi, sec);
+        return parseUtc(iso, out);  // validates the fields
+    }
+    return false;
+}
+
+// Seconds to wait, from either Retry-After form. Empty when absent or unreadable: the caller backs off.
+std::optional<long long> retryAfterSeconds(const std::string& value) {
+    if (value.empty()) return std::nullopt;
+    char* end = nullptr;
+    long long secs = std::strtoll(value.c_str(), &end, 10);
+    if (end && *end == 0) return secs >= 0 ? std::optional<long long>(secs) : std::nullopt;
+    Ticks when;
+    if (!parseHttpDate(value, when)) return std::nullopt;
+    long long delta = (when.v - nowUtc().v) / kTicksPerSecond;
+    return delta > 0 ? delta : 0;  // a date already past means retry now
+}
+
 [[noreturn]] void schema(const std::string& what) {
     // A response we cannot interpret is an error, never a guessed value.
     throw Error("HY000", "Unexpected PI Web API response: " + what + ". No value was inferred. Check the server version against docs/compatibility-matrix.md.");
@@ -266,14 +294,9 @@ private:
             log(corr, op, attempt, resp.status, resp.body.size(), t0, "");
             if (!retryable(resp.status) || attempt > cfg_.maxRetries) return resp;
             long long waitMs = backoffMs;
-            if (!resp.retryAfter.empty()) {
-                // Delta-seconds form only; an HTTP-date falls back to backoff.
-                char* end = nullptr;
-                long secs = std::strtol(resp.retryAfter.c_str(), &end, 10);
-                if (end && *end == 0 && secs >= 0) {
-                    if (secs > cfg_.maxRetryAfterSeconds) return resp;  // do not wait longer than policy allows
-                    waitMs = secs * 1000;
-                }
+            if (auto secs = retryAfterSeconds(resp.retryAfter)) {
+                if (*secs > cfg_.maxRetryAfterSeconds) return resp;  // do not wait longer than policy allows
+                waitMs = *secs * 1000;
             }
             c.sleepMs(waitMs);
             backoffMs *= 2;

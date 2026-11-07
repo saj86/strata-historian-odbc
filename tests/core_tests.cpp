@@ -346,6 +346,29 @@ static void testPiWebApi() {
         EXPECT_STATE("08S01", tooLong.read());
         CHECK(tooLong.fake->urls.size() == 1);  // policy refuses to wait that long
     }
+    {   // Retry-After as an HTTP date: past retries now, far future refuses to wait, garbage backs off
+        Live past(1);
+        past.fake->script.push_back(HttpResponse{503, "", "Sun, 06 Nov 1994 08:49:37 GMT"});
+        past.fake->script.push_back(ok("{\"Items\":[]}"));
+        auto t0 = std::chrono::steady_clock::now();
+        CHECK(past.read().events.empty());
+        CHECK(std::chrono::steady_clock::now() - t0 < std::chrono::milliseconds(400));  // shorter than the 500 ms backoff
+        CHECK(past.fake->urls.size() == 2);
+        Live future(3);
+        future.fake->script.push_back(HttpResponse{429, "", "Fri, 01 Jan 2100 00:00:00 GMT"});
+        EXPECT_STATE("08S01", future.read());
+        CHECK(future.fake->urls.size() == 1);
+        Live junk(1);
+        junk.fake->script.push_back(HttpResponse{503, "", "soon"});
+        junk.fake->script.push_back(ok("{\"Items\":[]}"));
+        t0 = std::chrono::steady_clock::now();
+        CHECK(junk.read().events.empty());
+        CHECK(std::chrono::steady_clock::now() - t0 >= std::chrono::milliseconds(400));
+        Live badZone(3);
+        badZone.fake->script.push_back(HttpResponse{429, "", "Fri, 01 Jan 2100 00:00:00 PST"});
+        badZone.fake->script.push_back(ok("{\"Items\":[]}"));
+        CHECK(badZone.read().events.empty());  // not a valid date, so backoff, not a refusal
+    }
     {   // the trace records upstream bytes per request, and no credentials or URLs
         auto path = std::filesystem::temp_directory_path() / "strata-core-trace.jsonl";
         std::filesystem::remove(path);
