@@ -38,6 +38,7 @@ if(WIN32)
   target_sources(strataodbc PRIVATE src/odbc/strataodbc.def src/odbc/version.rc)
   target_link_libraries(strataodbc PRIVATE odbccp32 user32)
   if(MSVC)
+    target_link_libraries(strataodbc PRIVATE legacy_stdio_definitions)  # odbccp32.lib needs it
     set_property(TARGET strataodbc PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
   endif()
 elseif(ODBC_PREFIX)
