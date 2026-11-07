@@ -20,7 +20,18 @@ Any Windows x64 application that speaks ODBC can read historian data through thi
 
 Install the driver once per machine, then create a 64-bit System DSN; your applications connect to the DSN by name. Use an elevated 64-bit PowerShell for all of this. These Windows steps have not been run yet, so report anything that doesn't match.
 
-**Test machine: use the unsigned package.** It needs no Visual Studio or Python, and is not for gateway or production hosts.
+**Easiest: the setup program.** Run `strata-historian-odbc-setup-<version>.exe` and follow the wizard. It needs no .NET, Visual Studio or other software, and asks for administrator rights.
+
+1. **Welcome** shows the version and what's already installed.
+2. **Task:** install, or on a computer that has the driver, update, set up a data source, or uninstall.
+3. **Licence**, then **Where to install:** the program folder, and whether to add documents, examples and Start menu shortcuts.
+4. **Data source:** a name such as `StrataPI`, the PI Web API URL, data server and sign-in, or synthetic test data. Tick **OLE DB data link** to also create a `.udl` file for OLE DB programs. A test user name and password are used only to test the connection, and are never saved.
+5. **Ready**, then **Working**: setup registers the driver, creates the data source and data link, adds the driver to Programs and Features, then tests the connection through ODBC and OLE DB.
+6. **Finish** shows the test results, and buttons to open ODBC Data Sources, the data link and the usage guide.
+
+To change or remove it later, use **Change or remove Strata Historian ODBC Driver** in the Start menu, or Settings > Apps. Don't mix this with the MSI on the same computer: setup refuses to take over a driver the MSI installed. To try it without changing anything, run it with `--demo`.
+
+**Test machine without the setup program: use the unsigned package.** It needs no Visual Studio or Python, and is not for gateway or production hosts.
 
 ```powershell
 cd C:\strata-test     # the unzipped folder
@@ -33,7 +44,7 @@ This installs the driver, creates the `StrataFixture` and `StrataFixturePreview`
 powershell -ExecutionPolicy Bypass -File .\scripts\Install-Portable.ps1 -Uninstall
 ```
 
-**Any machine: use the installer.** Build the MSI on Windows with one command. It needs the .NET SDK, but not Visual Studio:
+**Alternative: the MSI.** Build the MSI on Windows with one command. It needs the .NET SDK, but not Visual Studio:
 
 ```powershell
 .\scripts\Build-Installer.ps1
@@ -57,7 +68,7 @@ Fill in **User name** and **Password** only to try **Test**: they're used once a
 **Gateway or production host: use the signed MSI.** Build it with your organization's certificate, then install it silently and create the DSN with a script:
 
 ```powershell
-.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.2.0-x64.msi -ExpectedThumbprint <thumbprint>
+.\scripts\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-<version>-x64.msi -ExpectedThumbprint <thumbprint>
 .\scripts\Provision-StrataDsn.ps1 -Name StrataPI -Backend piwebapi -BaseUrl https://piweb.example.local/piwebapi -DataServer <data server name> -Auth Basic
 ```
 

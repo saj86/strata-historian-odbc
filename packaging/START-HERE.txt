@@ -11,6 +11,8 @@ This is an UNSIGNED TEST BUILD. Use it on a test machine, not on a gateway or pr
   - Never yet run on Windows or in Power BI.
   - Never yet connected to a real PI server.
   - PI licensing: check docs\backend-decision.md before using real data.
+Easiest install: the setup program, strata-historian-odbc-setup-<version>.exe, which is a separate download
+next to this package. Build it with "make setup" on any OS with the .NET 10 SDK.
 The Windows DLL here is cross-compiled. There is no MSI in this package. To make one with the setup wizard,
 run this on Windows with the .NET SDK installed (Visual Studio isn't needed):
        powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1

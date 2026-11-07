@@ -10,6 +10,10 @@ Only `strataodbc.dll`. No vendor binaries, and no third-party code is compiled i
 
 The Windows ODBC Driver Manager (`odbc32`) loads the driver; the driver doesn't link to it.
 
+## The setup program
+
+`strata-historian-odbc-setup-<version>.exe` is self-contained: it carries the .NET 10 runtime and Windows Forms (open source, from Microsoft), and the `System.Data.Odbc`, `System.Data.OleDb` and `System.ServiceProcess.ServiceController` packages, all MIT-licensed. Its tests use xUnit (open source). OLE DB data links use Microsoft's OLE DB Provider for ODBC Drivers, which is part of Windows.
+
 ## Build-time
 
 | Component | Kind | Used for |

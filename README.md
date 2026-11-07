@@ -16,6 +16,7 @@ The licensing question in [docs/backend-decision.md](docs/backend-decision.md) c
 | Native x64 ODBC driver DLL (source) | `src/` | Compiled for Windows with mingw-w64 cross tools; MSVC build Not run |
 | Offline fixture backend | `src/backend/fixture_backend.cpp` | Passed through a real driver manager (unixODBC on macOS) |
 | PI Web API backend + WinHTTP transport | `src/backend/piwebapi_*`, `winhttp_transport.cpp` | Mapping Passed against scripted responses; never run against a server |
+| **Setup program** (wizard `.exe`, like an installer) | `setup/`, built with `make setup` | Built and its install logic tested on macOS; never run on Windows |
 | WiX MSI source | `installer/` | Not run |
 | PowerShell runbooks | `scripts/*.ps1` | Parsed by PowerShell 7 with no errors; never executed |
 | Built-in connector M queries | `powerquery/examples.pq` | Not run |
@@ -26,6 +27,10 @@ An application calling ODBC, a DSN, and a Power Query `.mez` are distinct things
 the driver and a script that creates DSNs. The basic gateway path uses the **built-in** ODBC connector with no `.mez`.
 
 ## Quick start on Windows x64
+
+**Simplest:** run `strata-historian-odbc-setup-<version>.exe` and follow the wizard. Build it on any OS with the .NET 10 SDK: `make setup`.
+
+**From source:**
 
 Prerequisites: Visual Studio 2022 Build Tools with "Desktop development with C++" and a Windows 10/11 SDK,
 CMake 3.21+, and `dotnet tool install --global wix --version 5.0.2`. From an **elevated** 64-bit PowerShell:

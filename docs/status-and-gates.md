@@ -41,6 +41,8 @@ Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual res
 | Driver DLL loaded by the Windows driver manager | | Not run | |
 | WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only. `Test-Package.ps1` now runs WinHTTP against the mock on Windows |
 | Excel over ODBC | | Not run | |
+| Setup program install logic | macOS, .NET 10, simulated Windows | Passed | 22 tests: registry, Programs and Features, shortcuts, data source, `.udl`, no stored credentials, update, gateway restart, uninstall, and the real payload |
+| Setup program `.exe` | Built on macOS | Passed (build only) | Self-contained win-x64, 51 MB; administrator manifest, icon, version only, payload embedded. **Never run on Windows** |
 | Setup wizard MSI | | Not run | Needs Windows. On macOS, WiX loaded the wizard extension, then stopped at its known Mac path errors |
 | Settings window in ODBC Data Sources | | Not run | Compiled into the DLL, and its layout checked by script: 30 controls, no overlaps. Its form logic is tested |
 | OLE DB through MSDASQL | | Not run | MSDASQL may need ODBC features the driver lacks |

@@ -21,11 +21,24 @@ The static CRT in `CMakeLists.txt` means no VC++ redistributable. Or run `script
 ```powershell
 signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> build\windows-x64\Release\strataodbc.dll
 # ...build the MSI...
-signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> dist\strataodbc-0.2.0-x64.msi
-Get-AuthenticodeSignature dist\strataodbc-0.2.0-x64.msi
+signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> dist\strataodbc-<version>-x64.msi
+Get-AuthenticodeSignature dist\strataodbc-<version>-x64.msi
 ```
 
 For every release, raise the version in `src/odbc/version.h` and add an entry to `CHANGELOG.md`. Everything else reads the version from that header: CMake, the DLL's file version, `SQL_DRIVER_VER`, the Makefile, the MSI and the file names. `MajorUpgrade` keys on it, so keep each released signed MSI for rollback.
+
+## Setup program or MSI
+
+Use one or the other on a computer, not both. The setup program refuses to take over a driver the MSI installed.
+
+| | Setup program (`make setup`) | MSI (`Build-Installer.ps1`) |
+|---|---|---|
+| Builds on | macOS, Linux or Windows with the .NET 10 SDK | Windows with the .NET SDK |
+| Sets up a data source | Yes, with ODBC and OLE DB tests | No; use ODBC Data Sources afterwards |
+| Silent install | No | Yes: `msiexec /i … /qn` |
+| Best for | Report authors' computers | Gateways and managed deployment |
+
+Neither is signed until you sign it. Sign the setup program with `signtool sign /fd SHA256 /tr <timestamp-url> /td SHA256 /sha1 <thumbprint> strata-historian-odbc-setup-<version>.exe`.
 
 ## Build the installer
 

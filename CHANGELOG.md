@@ -2,6 +2,18 @@
 
 Versions are numbered `major.minor.patch`. The version lives in `src/odbc/version.h`, and every file name uses it.
 
+## 0.3.0 (2026-11-07)
+
+**Setup program**
+- `strata-historian-odbc-setup-<version>.exe`: an English setup wizard, one self-contained file that needs nothing else installed.
+- Installs, updates, sets up data sources, and uninstalls. Registers the driver with Windows, adds it to Programs and Features and the Start menu, and keeps a copy for later changes.
+- Sets up a system data source and an OLE DB data link (`.udl`) for it, and tests the connection through ODBC and OLE DB. Test credentials are never saved.
+- Can stop the on-premises data gateway during setup and start it again, even when setup fails.
+- Refuses to take over a driver installed by the MSI or a script.
+- `make setup` builds it on macOS, Linux or Windows. `--demo` shows every page without changing anything.
+
+**Not yet run on Windows:** the setup program. Its install logic is tested against a simulated Windows.
+
 ## 0.2.0 (2026-11-07)
 
 **Installing and setting up**

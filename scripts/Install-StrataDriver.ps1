@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS  Silent install, upgrade, repair and uninstall with signature verification. Idempotent.
-.EXAMPLE   .\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-0.2.0-x64.msi -ExpectedThumbprint AB12...
+.EXAMPLE   .\Install-StrataDriver.ps1 -Action Install -MsiPath .\strataodbc-<version>-x64.msi -ExpectedThumbprint AB12...
 .NOTES     Gateway nodes: drain first. Upgrading replaces a DLL the mashup containers may hold loaded, so this
            stops the gateway service for the operation unless -NoServiceRestart is given.
 #>
