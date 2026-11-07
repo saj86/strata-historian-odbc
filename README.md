@@ -20,7 +20,7 @@ The licensing question in [docs/backend-decision.md](docs/backend-decision.md) c
 | PowerShell runbooks | `scripts/*.ps1` | Parsed by PowerShell 7 with no errors; never executed |
 | Built-in connector M queries | `powerquery/examples.pq` | Not run |
 | Optional `.mez` source (separate artifact) | `powerquery/StrataHistorian/` | Not run; not needed for Import |
-| Fabric design, schemas, notebook, rules model | `fabric/`, `docs/fabric-design.md` | Rules model Passed; PySpark notebook and tenant pilot Not run |
+| Fabric design, schemas, notebooks, rules model | `fabric/`, `docs/fabric-design.md` | Rules model Passed; PySpark notebooks and tenant pilot Not run |
 
 An application calling ODBC, a DSN, and a Power Query `.mez` are distinct things. This repository delivers
 the driver and a script that creates DSNs. The basic gateway path uses the **built-in** ODBC connector with no `.mez`.

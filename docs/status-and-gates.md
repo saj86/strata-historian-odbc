@@ -1,6 +1,6 @@
 # Status and gates
 
-Last updated 2026-11-06. Statuses are Passed, Failed or Not run, with actual results only. "Passed" below means on the stated environment, and no further.
+Last updated 2026-11-07. Statuses are Passed, Failed or Not run, with actual results only. "Passed" below means on the stated environment, and no further.
 
 ## Gates
 
@@ -17,14 +17,17 @@ Last updated 2026-11-06. Statuses are Passed, Failed or Not run, with actual res
 
 | Check | Environment | Status | Result |
 |---|---|---|---|
-| Portable core tests | macOS arm64, Apple clang 21 | Passed | 202 checks, 0 failures |
+| Portable core tests | macOS arm64, Apple clang 21 | Passed | 212 checks, 0 failures |
 | Native ODBC smoke, including exact golden rows | macOS, unixODBC 2.3.14 driver manager | Passed | 782 checks, 0 failures |
 | Both under ASan + UBSan | same | Passed | 0 findings |
 | Both under TSan | same | Passed | 0 findings |
 | Windows x64 DLL and test executables compile and link | zig 0.17.1 mingw-w64 cross build | Passed | 0 warnings |
 | PE exports and imports | `pefile` | Passed | x64, 50 exports match `.def`, OS DLLs only |
-| Fabric rules model | Python 3.14 | Passed | 15 tests |
-| Mutation check | macOS | Passed | 16 mutants: 14 detected, 2 equivalent |
+| C# sample through .NET `OdbcConnection` | macOS, .NET 10, unixODBC | Passed | 7 rows, refusals, schema probe, mid-read cancel |
+| PowerShell sample through `OdbcConnection` | macOS, PowerShell 7.6, unixODBC | Passed | 7 rows, refusal, CSV export, chunked windows |
+| `make build`, `test`, `install`, `uninstall`, `package-windows` | macOS | Passed | Clean rebuild; queried through the installed driver |
+| Fabric rules model | Python 3.14 | Passed | 29 tests |
+| Mutation check (run before the 2026-11-07 fixes, not repeated) | macOS | Passed | 16 mutants: 14 detected, 2 equivalent |
 | PowerShell scripts parse | PowerShell 7.6 on macOS | Passed | 0 parse errors. **Syntax only** |
 | JSON artifacts parse | Python | Passed | |
 | MSI build | macOS | **Failed** | WiX supports only Windows; treat MSI as unverified |
@@ -33,7 +36,8 @@ Last updated 2026-11-06. Statuses are Passed, Failed or Not run, with actual res
 | WinHTTP transport, TLS, cancel on real sockets, `Negotiate`, `ConfigDSNW` | | Not run | Compiled only; this code has never executed |
 | PowerShell behavior | | Not run | |
 | Power Query M, `.mez` | | Not run | |
-| PySpark notebook | | Not run | No Java on this host |
+| PySpark notebooks, `curated_tables.sql` | | Not run | No Java on this host. Syntax parsed only |
+| Samples and test package on Windows | | Not run | |
 | GitHub Actions workflow | | Not run | |
 | Any PI server | | Not run | |
 
@@ -45,9 +49,9 @@ Last updated 2026-11-06. Statuses are Passed, Failed or Not run, with actual res
 - `ORDER BY` other than natural order buffers rows in memory, up to `MaxRows`.
 - More events at one timestamp than `PageSize` raises an error. Raise `PageSize`.
 - `ConfigDSNW` has no dialog, by design. Use the provisioning script.
-- The DLL has no file version resource yet, so use `driverSha256` and `SQL_DRIVER_VER`.
-- Bytes aren't in the trace yet.
 - Pipeline correlation with driver traces is by point, window and time, not a shared ID.
+- `curated_af_attributes` and `curated_event_frames` are table definitions only, because no backend can fill them yet.
+- The driver version is set by hand in `src/odbc/version.h`; `Build-And-Test.ps1 -Version` only sets the MSI version, so change both together.
 
 ## Open questions
 

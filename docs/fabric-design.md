@@ -32,9 +32,9 @@ Things only a pilot can answer:
 
 ## Pipeline
 
-Parameters, activity sequence and the source query: [`fabric/pipeline/pipeline_design.json`](../fabric/pipeline/pipeline_design.json). It is a design and **not an importable export**, as no export schema could be verified. Build it in the UI and commit the real export afterwards. `nb_validate_window` parses the parameters as UTC and checks the point against the control table. Only those canonical values reach the query string, which is what makes literal construction safe.
+Parameters, activity sequence and the source query: [`fabric/pipeline/pipeline_design.json`](../fabric/pipeline/pipeline_design.json). It is a design and **not an importable export**, as no export schema could be verified. Build it in the UI and commit the real export afterwards. Create the tables first with [`curated_tables.sql`](../fabric/schemas/curated_tables.sql), and add a `PENDING` control row for each point. [`validate_window.py`](../fabric/notebooks/validate_window.py) parses the parameters as UTC and checks the point against the control table. Only those canonical values reach the query string, which is what makes literal construction safe.
 
-Settings: bounded source SQL; explicit column mapping from the staging schema; query timeout (default is 120 minutes; set 30); retry 1; parallel copies 1 per window, with a bounded number of concurrent windows; completion signal to the semantic model refresh.
+Settings: bounded source SQL; explicit column mapping from the staging schema; query timeout (default is 120 minutes; set 30); activity retry 0, with reruns raising the `Attempt` parameter so staging stays immutable; parallel copies 1 per window, with a bounded number of concurrent windows; completion signal to the semantic model refresh.
 
 ## Dataflow Gen2
 
@@ -52,10 +52,10 @@ Schema: [`control_record.schema.json`](../fabric/schemas/control_record.schema.j
 
 | Table | Grain | Key | Status |
 |---|---|---|---|
-| `curated_points` | Point version per source | `SourceServer, PointId` | Designed |
+| `curated_points` | One point per source | `SourceServer, PointId` | Notebook written, Not run; rules tested |
 | `curated_recorded_events` | One event | Window-replaced; `(SourceServer, PointId, EventUtcRaw, EventSeq)` is unique per commit | **Notebook written, Not run** |
-| `curated_af_attributes` | Attribute, with its point reference | `AF path`; backend not implemented | Designed only |
-| `curated_event_frames` | Frame | Frame ID; backend not implemented | Designed only |
+| `curated_af_attributes` | Attribute, with its point reference | `SourceServer, AttributeId` | Table definition only; no backend |
+| `curated_event_frames` | Frame | `SourceServer, FrameId` | Table definition only; no backend |
 
 Interpolated values and summaries go in **separate tables**, never in recorded events.
 
@@ -76,6 +76,8 @@ No reliable source event key is known. A late insert at a repeated timestamp ren
 | Late event | Included after overlap re-read | `test_late_event_shifts_seq_without_duplicates` |
 
 Corrections: no documented change feed has been verified on the site, so plan overlap re-reads of recent windows on each run plus a periodic reconciliation of old windows. The horizon is a site decision. If a documented feed turns out to be available, it can narrow which windows get re-read, but replacement stays the mechanism.
+
+Before accepting a batch, the notebook also checks the row count, the checksum when one is expected, and that each `EventUtc` agrees with `EventUtcRaw` to microseconds, the finest unit Spark keeps. A rejected batch writes a `FAILED` control record for that attempt.
 
 To check this in Spark before a tenant exists: run `curate_recorded_events.py` with a local Spark + Delta install, using the fixture rows from `fixtures/expected_pressure_window.csv` as staging. It needs Java, which this host doesn't have.
 

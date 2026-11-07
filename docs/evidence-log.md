@@ -1,6 +1,6 @@
 # Evidence log
 
-Confidence reflects source quality, not how likely the claim feels. Dates are 2026-11-06.
+Confidence reflects source quality, not how likely the claim feels. Dates are 2026-11-06 and 2026-11-07.
 
 ## Sources actually read
 
@@ -44,18 +44,21 @@ macOS arm64, Apple clang 21, unixODBC 2.3.14 built privately, zig 0.17.1 (mingw-
 
 | Test | Result | What it establishes | What it does not |
 |---|---|---|---|
-| `core_tests` | Passed: 202 checks, 0 failures | Parser, planner, fixture semantics, PI Web API mapping against scripted responses, config rules | Any server behavior |
+| `core_tests` | Passed: 212 checks, 0 failures | Parser, planner, fixture semantics, PI Web API mapping against scripted responses, config rules | Any server behavior |
 | `odbc_smoke` through the unixODBC driver manager | Passed: 782 checks, 0 failures | ODBC call paths, Unicode, binding, rowsets, diagnostics, cancel, concurrency, golden rows | Windows driver manager or Power BI behavior |
 | Both under AddressSanitizer + UBSan | Passed: 0 findings | No memory or undefined-behavior errors on those paths | WinHTTP code, which does not run here |
 | Both under ThreadSanitizer | Passed: 0 findings | No data races on those paths (8 threads, cancel thread) | Same |
 | Windows x64 cross-compile (zig/mingw-w64) | Passed: 0 warnings | Source compiles and links against Windows headers, including WinHTTP and setup code | That the DLL loads or runs; MSVC behavior |
-| PE inspection of `strataodbc.dll` | Passed | Machine 0x8664, 50 exports matching the `.def`; imports only `kernel32`, `user32`, `odbccp32`, `winhttp`, UCRT. **No PI or OLE DB imports** | Clean-host behavior |
-| Fabric rules model | Passed: 15 tests | Replay, crash, watermark, amend and delete rules | Spark, Delta or Fabric |
+| PE inspection of `strataodbc.dll` | Passed | Machine 0x8664, version resource 0.1.0.0, 50 exports matching the `.def`; imports only `kernel32`, `user32`, `odbccp32`, `winhttp`, UCRT. **No PI or OLE DB imports** | Clean-host behavior |
+| C# and PowerShell samples through .NET `OdbcConnection` | Passed | A second, independent ODBC client works on the same driver: parameters, typed reads, NULLs, errors, cancel | Behavior of .NET's Windows driver-manager path |
+| Fabric rules model | Passed: 29 tests | Replay, crash, watermark, amend, delete, checksum, precision, window validation and point merge rules | Spark, Delta or Fabric |
 | PowerShell scripts | 0 parse errors (PowerShell 7) | Syntax | Any behavior; they need Windows |
 | `tests/mock_piwebapi.py` | Passed: manual `curl` of 3 routes | The mock responds | Anything about PI |
 | WiX build | **Failed on macOS: WIX0389**; same error with a no-space name, and WiX warns it supports only Windows | Nothing. Treat MSI as Not run | |
 
 ### Mutation check
+
+Run on 2026-11-06, before the later fixes, and not repeated.
 
 Faults were injected into the safety behaviors to confirm the tests detect them.
 
