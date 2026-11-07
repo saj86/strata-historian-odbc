@@ -19,12 +19,12 @@
 
 #include "../backend/backend.h"
 #include "config.h"
+#include "version.h"
 #include "wstr.h"
 
 using namespace strata;
 
 #define STRATA_DRIVER_NAME "strataodbc.dll"
-#define STRATA_DRIVER_VERSION "00.01.0000"
 
 namespace {
 

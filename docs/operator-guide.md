@@ -25,7 +25,7 @@ signtool sign /fd SHA256 /tr <your-timestamp-url> /td SHA256 /sha1 <thumbprint> 
 Get-AuthenticodeSignature build\strataodbc-0.1.0-x64.msi
 ```
 
-Bump `ProductVersion` for every release: `MajorUpgrade` keys on it. Keep each released signed MSI for rollback. DLL file version resources are not yet set, so add a `.rc` before relying on the `driverFileVersion` check; `driverSha256` works today, and `SQL_DRIVER_VER` reports the version.
+Bump `ProductVersion` for every release: `MajorUpgrade` keys on it. Keep each released signed MSI for rollback. Change `src/odbc/version.h` and `project(VERSION)` in `CMakeLists.txt` together: the DLL's file version and `SQL_DRIVER_VER` come from that header.
 
 ## Install, upgrade, repair, uninstall
 

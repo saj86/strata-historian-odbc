@@ -1,0 +1,31 @@
+// Windows version resource, read by Test-StrataNode.ps1 as driverFileVersion.
+#include <winver.h>
+#include "version.h"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION STRATA_VERSION_MAJOR, STRATA_VERSION_MINOR, STRATA_VERSION_PATCH, 0
+PRODUCTVERSION STRATA_VERSION_MAJOR, STRATA_VERSION_MINOR, STRATA_VERSION_PATCH, 0
+FILEFLAGSMASK VS_FFI_FILEFLAGSMASK
+FILEFLAGS 0
+FILEOS VOS_NT_WINDOWS32
+FILETYPE VFT_DLL
+FILESUBTYPE VFT2_UNKNOWN
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName", "Internal"
+            VALUE "FileDescription", "Strata Historian ODBC Driver"
+            VALUE "FileVersion", STRATA_VERSION_TEXT
+            VALUE "InternalName", "strataodbc"
+            VALUE "OriginalFilename", "strataodbc.dll"
+            VALUE "ProductName", "Strata Historian ODBC Driver"
+            VALUE "ProductVersion", STRATA_VERSION_TEXT
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 1200
+    END
+END
